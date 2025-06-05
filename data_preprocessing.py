@@ -1,4 +1,29 @@
-import re, json
+import os, re, json, time
+from google import genai
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Gemini API 키 설정
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=gemini_api_key)
+
+def generate_prompt(message: str) -> str:
+    i = 0
+    while True:
+        i += 1
+        try:
+            print(str(i)+"번째 시도")
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=f"다음 사용자 메시지의 적절한 이전 질문 혹은 이전 대화를 친구/동료 시점으로 50자 이내 한국어로 생성해주세요. (출력 예시: 상대방이 고기 먹은것을 자랑한다) 메시지: '{message}'",
+            )
+            print(response.text.strip() + "\n" + message)
+            return response.text.strip()
+        except Exception as e:
+            print(e)
+            time.sleep(5)
+    # return "대화를 시작해주세요"
 
 # 카톡 메세지 전처리
 # 보낸이 이름 패턴 (김나희, 나희 모두 포함)
@@ -19,7 +44,7 @@ for file in files:
         for line in f:
             match = pattern.match(line.strip())
             if match:
-                sender, time, message = match.groups()
+                sender, ts, message = match.groups()
                 if any(s in sender for s in senders):
                     # 메시지에서 URL, 이메일 추출
                     urls = url_pattern.findall(message)
@@ -32,10 +57,20 @@ for file in files:
                         continue
                     # 2. 메시지에 링크/이메일 + 텍스트가 있으면: 텍스트만 저장
                     elif message_no_url_email:
-                        results.append(message_no_url_email)
+                        results.append(
+                            {
+                                "prompt": generate_prompt(message_no_url_email.strip()),
+                                "completion": message_no_url_email.strip()
+                            }
+                        )
                     # 3. 메시지에 링크/이메일 없고 텍스트만 있으면: 텍스트 저장
                     elif not (urls or emails) and message:
-                        results.append(message.strip())
+                        results.append(
+                            {
+                                "prompt": generate_prompt(message.strip()),
+                                "completion": message.strip()
+                            }
+                        )
 
 # 결과 저장
 json_data = json.dumps(results, ensure_ascii=False, indent=2)
@@ -89,7 +124,12 @@ with open(file_path, encoding='utf-8') as f:
             if text and text.strip():
                 cleaned = clean_message(text)
                 if cleaned:
-                    results.append(cleaned)
+                    results.append(
+                        {
+                            "prompt": generate_prompt(cleaned),
+                            "completion": cleaned
+                        }
+                    )
 
 # 결과 저장
 json_data = json.dumps(results, ensure_ascii=False, indent=2)
