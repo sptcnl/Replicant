@@ -16,7 +16,7 @@ def generate_prompt(message: str) -> str:
             print(str(i)+"번째 시도")
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
-                contents=f"다음 사용자 메시지의 적절한 이전 질문 혹은 이전 대화를 친구/동료 시점으로 50자 이내 한국어로 생성해주세요. (출력 예시: 상대방이 고기 먹은것을 자랑한다) 메시지: '{message}'",
+                contents=f"'메세지: {message}' 이 메시지 앞에 올, 상대(친구 또는 동료)가 자연스럽게 할 만한 50자 이내의 한국어 질문이나 대화의 예시를 한가지만 생성해줘.",
             )
             print(response.text.strip() + "\n" + message)
             return response.text.strip()
