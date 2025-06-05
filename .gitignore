@@ -1,3 +1,8 @@
 .venv
 .env
 HyperCLOVA-X-SEED-1.5B
+ptday412_develop.txt
+ptday412.txt
+my_messages_in_lounge_channel.json
+my_final_slack_message.json
+my_final_ptday_message.json
