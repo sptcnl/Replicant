@@ -15,14 +15,14 @@ def generate_prompt(message: str) -> str:
         try:
             print(str(i)+"번째 시도")
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-1.5-flash-8b",
                 contents=f"'메세지: {message}' 이 메시지 앞에 올, 상대(친구 또는 동료)가 자연스럽게 할 만한 50자 이내의 한국어 질문이나 대화의 예시를 한가지만 생성해줘.",
             )
             print(response.text.strip() + "\n" + message)
             return response.text.strip()
         except Exception as e:
             print(e)
-            time.sleep(5)
+            time.sleep(30)
     # return "대화를 시작해주세요"
 
 # 카톡 메세지 전처리
