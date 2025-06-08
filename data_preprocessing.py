@@ -22,7 +22,9 @@ def generate_prompt(message: str) -> str:
             return response.text.strip()
         except Exception as e:
             print(e)
-            time.sleep(30)
+            delay_t = input("딜레이 시간을 적어주세요 (안 적을 시 기본 30초): ")
+            fin_delay = int(delay_t or 30)
+            time.sleep(fin_delay)
     # return "대화를 시작해주세요"
 
 # 카톡 메세지 전처리
