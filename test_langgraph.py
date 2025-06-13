@@ -4,7 +4,7 @@ from langgraph.types import Command
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 import uuid, os
 from dotenv import load_dotenv
 
@@ -16,8 +16,11 @@ gemini_api_key = os.getenv("GEMINI_API_KEY")
 class State(TypedDict):
     input_text: str
     output_text: str
+    history: list[dict]
+    metadata: dict
 
 def call_model(state: State, config):
+    """llm 부르는 node"""
     # config에서 LLM 타입 가져오기(기본값: "openai")
     llm_type = config["configurable"]["llm"]["type"]
 
@@ -31,21 +34,37 @@ def call_model(state: State, config):
     elif llm_type == "gemini":
         model = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash-8b",
-            google_api_key=config["configurable"]["llm"]["api_key"],
-            convert_system_message_to_human=True
+            google_api_key=config["configurable"]["llm"]["api_key"]
         )
     elif llm_type == "openai":
         model = ChatOpenAI(model="gpt-4o-mini")  # 예: OpenAI 계열 모델
     else:
-        raise ValueError
+        raise ValueError(f"지원하지 않는 모델: {llm_type}")
     
-    user_input = state["input_text"]
     # 메시지 형태로 LLM 호출
-    messages = [HumanMessage(content=state["input_text"])]
+    # 히스토리를 메시지로 변환
+    messages = []
+    for turn in state.get("history", []):
+        messages.append(HumanMessage(content=turn["user"]))
+        messages.append(AIMessage(content=turn["ai"]))
+    
+    # 현재 입력 추가
+    messages.append(HumanMessage(
+        content=state["input_text"]
+    ))
+    messages.append(HumanMessage(
+        content=f'이건 너의 이름, 나이, 성격 등의 정보야. 이 정보를 토대로 나와 역할놀이 해줘: {state["metadata"]}'
+    ))
+    print("messages: ", messages)
     response = model.invoke(messages)  # LLM 호출
     
     # 결과를 output_text에 반영
-    return {"output_text": response.content}
+    return {
+        "output_text": response.content,
+        "history": state.get("history", []) + [
+            {"user": state["input_text"], "ai": response.content}
+        ]
+    }
 
 # 그래프 구성
 builder = StateGraph(State)
@@ -68,8 +87,35 @@ config = {
     "recursion_limit": 5,   # 옵션: recursion_limit 설정
 }
 
-initial_state = {"input_text": "하이", "output_text": ""}
+current_state = {
+    "input_text": "", 
+    "output_text": "", 
+    "history": [], 
+    "metadata": {
+        "character": {
+        "name": "Dr. Watson",
+        "personality": ["날카로운 관찰력", "의학 전문가"],
+        "relationship": {"with": "Sherlock", "status": "조수"}
+        },
+        "scenario": {
+            "theme": "19세기 런던 탐정물",
+            "current_location": "베이커가 221B"
+        }
+    }
+}
 
-# 그래프 실행
-result = graph.invoke(initial_state, config=config)
-print("최종 결과 상태:", result)
+while True:
+    print(thread_id, config)
+    user_input = input("대화를 해주세요 (종료 시 'end'):")
+    if user_input.lower() == "end":
+        break
+    current_state["input_text"] = user_input
+    # 그래프 실행
+    result = graph.invoke(current_state, config=config)
+    print("AI:", result["output_text"])
+    current_state = {  # 새로운 상태로 교체
+        "input_text": "",
+        "output_text": "",
+        "history": result["history"],
+        "metadata": result.get("metadata", current_state["metadata"])
+    }
