@@ -143,7 +143,8 @@ graph = builder.compile(checkpointer=checkpointer)
 
 # 초기 메타데이터 설정
 user_id = "user_001"
-namespace = (user_id, "metadata")
+character_id = "character_001"
+namespace = (user_id, character_id)
 initial_metadata = {
     "name": "Dr. Watson",
     "personality": ["날카로운 관찰력", "의학 전문가"],
