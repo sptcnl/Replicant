@@ -1,7 +1,7 @@
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
-from langgraph.types import Command
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.store.memory import InMemoryStore  # 추가
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
@@ -11,54 +11,55 @@ from dotenv import load_dotenv
 load_dotenv()
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
+in_memory_store = InMemoryStore()  # 장기 메모리 저장소 초기화
 
-# 상태 정의: input_text를 입력받아 output_text를 생성할 예정
+# 상태 정의: metadata 제거
 class State(TypedDict):
     input_text: str
     output_text: str
     history: list[dict]
-    metadata: dict
 
 def call_model(state: State, config):
-    """llm 부르는 node"""
-    # config에서 LLM 타입 가져오기(기본값: "openai")
     llm_type = config["configurable"]["llm"]["type"]
-
-    # llm_type에 따라 LLM 인스턴스 생성 (예: openai, anthropic, huggingface 등)
-    # 여기서는 예제로 llm_type이 "anthropic"이면 Anthropic API,
-    # 아니면 OpenAI 기반 ChatOpenAI를 사용한다고 가정
-    if llm_type == "anthropic":
-        model = ChatOpenAI(model="claude-v1")  # 예: Anthropic Claude
-    elif llm_type == "huggingface":
-        model = ""
-    elif llm_type == "gemini":
+    
+    # 메타데이터 조회
+    user_id = config["configurable"]["user_id"]
+    namespace = (user_id, "metadata")
+    metadata = in_memory_store.get(namespace, "character").value  # 저장소에서 조회
+    
+    # 모델 초기화 (기존 코드와 동일)
+    if llm_type == "gemini":
         model = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash-8b",
+            model="gemini-1.5-flash-latest",
             google_api_key=config["configurable"]["llm"]["api_key"]
         )
-    elif llm_type == "openai":
-        model = ChatOpenAI(model="gpt-4o-mini")  # 예: OpenAI 계열 모델
-    else:
-        raise ValueError(f"지원하지 않는 모델: {llm_type}")
     
-    # 메시지 형태로 LLM 호출
-    # 히스토리를 메시지로 변환
+    # 메시지 구성
     messages = []
     for turn in state.get("history", []):
-        messages.append(HumanMessage(content=turn["user"]))
-        messages.append(AIMessage(content=turn["ai"]))
+        messages.extend([
+            HumanMessage(content=turn["user"]),
+            AIMessage(content=turn["ai"])
+        ])
     
-    # 현재 입력 추가
-    messages.append(HumanMessage(
-        content=state["input_text"]
-    ))
-    messages.append(HumanMessage(
-        content=f'이건 너의 이름, 나이, 성격 등의 정보야. 이 정보를 토대로 나와 역할놀이 해줘: {state["metadata"]}'
-    ))
-    print("messages: ", messages)
-    response = model.invoke(messages)  # LLM 호출
+    # 시스템 메시지에 메타데이터 반영
+    system_msg = f"""
+    너는 이 캐릭터이고, 나와 이 설정에 맞춰 연기해줘.
+    [캐릭터 설정]
+    - 당신은 {metadata['name']} 역할을 맡았습니다.
+    - 당신의 성격: {', '.join(metadata['personality'])}
+    - 반드시 이 역할에 충실해야 합니다.
+    - 다른 캐릭터의 말을 흉내내지 마세요.
+    - 캐릭터 설정이 아닌 시나리오가 바뀌게 되면 캐묻지 말고 자연스럽게 진행해
     
-    # 결과를 output_text에 반영
+    [현재 시나리오]
+    {metadata['scenario']}
+    """
+    messages.append(HumanMessage(content=system_msg))
+    messages.append(HumanMessage(content=state["input_text"]))
+    
+    response = model.invoke(messages)
+    
     return {
         "output_text": response.content,
         "history": state.get("history", []) + [
@@ -75,43 +76,43 @@ builder.add_edge("call_model", END)
 checkpointer = MemorySaver()
 graph = builder.compile(checkpointer=checkpointer)
 
-thread_id = str(uuid.uuid4())
-config = {
-    "configurable": {
-        "llm": {
-            "type": "gemini",
-            "api_key": gemini_api_key
-        },
-        "thread_id": thread_id  # thread_id 설정
-    },
-    "recursion_limit": 5,   # 옵션: recursion_limit 설정
+# 초기 메타데이터 설정
+user_id = "user_001"
+namespace = (user_id, "metadata")
+initial_metadata = {
+    "name": "Dr. Watson",
+    "personality": ["날카로운 관찰력", "의학 전문가"],
+    "scenario": f"19세기 런던 탐정물, 베이커가 221B를 배경으로 하고, 당신은 셜록이다."
 }
+in_memory_store.put(namespace, "character", initial_metadata)
+print(f"in_memory_store: {in_memory_store.search(namespace)}")
 
+# 실행 루프
 current_state = {
     "input_text": "", 
     "output_text": "", 
-    "history": [], 
-    "metadata": {
-        "character": {
-        "name": "Dr. Watson",
-        "personality": ["날카로운 관찰력", "의학 전문가"]
-        },
-        "scenario": "19세기 런던 탐정물, 베이커가 221B를 배경으로 한다. 왓슨은 나(셜록)의 탐정 조수."
+    "history": []
+}
+
+config = {
+    "configurable": {
+        "llm": {"type": "gemini", "api_key": gemini_api_key},
+        "thread_id": str(uuid.uuid4()),
+        "user_id": user_id  # 사용자 식별자 추가
     }
 }
 
 while True:
-    print(thread_id, config)
     user_input = input("대화를 해주세요 (종료 시 'end'):")
     if user_input.lower() == "end":
         break
+    
     current_state["input_text"] = user_input
-    # 그래프 실행
     result = graph.invoke(current_state, config=config)
     print("AI:", result["output_text"])
-    current_state = {  # 새로운 상태로 교체
+    
+    current_state = {
         "input_text": "",
         "output_text": "",
-        "history": result["history"],
-        "metadata": result.get("metadata", current_state["metadata"])
+        "history": result["history"]
     }
