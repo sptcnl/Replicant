@@ -94,13 +94,9 @@ current_state = {
     "metadata": {
         "character": {
         "name": "Dr. Watson",
-        "personality": ["날카로운 관찰력", "의학 전문가"],
-        "relationship": {"with": "Sherlock", "status": "조수"}
+        "personality": ["날카로운 관찰력", "의학 전문가"]
         },
-        "scenario": {
-            "theme": "19세기 런던 탐정물",
-            "current_location": "베이커가 221B"
-        }
+        "scenario": "19세기 런던 탐정물, 베이커가 221B를 배경으로 한다. 왓슨은 나(셜록)의 탐정 조수."
     }
 }
 
