@@ -18,6 +18,7 @@ class Character(models.Model):
         Tag, through="CharacterTag", related_name="tag_character", 
     )
     name = models.CharField(max_length=10)
+    scenario = models.TextField(default="")
 
     def __str__(self):
         return self.name
