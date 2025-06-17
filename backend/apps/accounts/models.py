@@ -8,7 +8,7 @@ class User(AbstractUser):
             ('O', 'Other'),
         )
     username = models.CharField(max_length=10, unique=True)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICE, blank=True, null=True)
 
     def __str__(self):
