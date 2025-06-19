@@ -39,6 +39,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -84,7 +85,16 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("channels_redis", 6379)],
+        },
+    },
+}
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -99,6 +109,7 @@ DATABASES = {
         "PASSWORD": env("DEV_DB_PASSWORD"),
         "HOST": env("DEV_DB_HOST"),
         "PORT": env("DEV_DB_PORT"),
+        "TEST": {"NAME": "test_db"},
     }
 }
 
