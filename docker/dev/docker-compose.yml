@@ -11,3 +11,45 @@ services:
         volumes:
             - ./pgdata:/var/lib/postgresql/data
         restart: unless-stopped
+        networks:
+            - app-network
+
+    channels_redis:
+        image: redis:8
+        container_name: channels_redis
+        command: redis-server --save 60 1 --loglevel warning
+        ports:
+            - "6379:6379"
+        volumes:
+            - redisdata:/data
+        networks:
+            - app-network
+
+    web:
+        build: 
+            context: ../..
+            dockerfile: docker/dev/Dockerfile
+        container_name: django_app
+        command: > 
+            sh -c "python manage.py migrate --noinput && daphne -b 0.0.0.0 -p 8000 config.asgi:application"
+        volumes:
+            - ../../backend:/app
+        ports:
+            - "8000:8000"
+        environment:
+            - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
+            - REDIS_URL=redis://channels_redis:6379
+            - DJANGO_SETTINGS_MODULE=config.settings
+        depends_on:
+            - postgres
+            - channels_redis
+        networks:
+            - app-network
+
+volumes:
+  redisdata: {}
+  pgdata: {}
+
+networks:
+  app-network:
+    driver: bridge
