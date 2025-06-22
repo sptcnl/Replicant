@@ -47,9 +47,9 @@ services:
             - app-network
 
 volumes:
-  redisdata: {}
-  pgdata: {}
+    redisdata: {}
+    pgdata: {}
 
 networks:
-  app-network:
-    driver: bridge
+    app-network:
+        driver: bridge
