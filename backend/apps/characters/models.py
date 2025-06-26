@@ -16,6 +16,7 @@ class Character(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="own_character"
     )
+    profile_img = models.ImageField()
     tag = models.ManyToManyField(
         Tag, through="CharacterTag", related_name="tag_character", 
     )
