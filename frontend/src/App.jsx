@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatList from './ChatList';
 import Chat from './Chat';
+import {getCharacterList} from './api/character.js';
 
 function App() {
   const [friends, setFriends] = useState([
@@ -8,6 +9,21 @@ function App() {
     { id: 2, name: '이지은', avatar: 'avatar2.png', status: 'offline' },
     { id: 3, name: '박준호', avatar: 'avatar3.png', status: 'online' },
   ]);
+
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      try {
+        const characters = await getCharacterList();
+        setFriends(prevFriends => [...prevFriends, ...characters]);
+        console.log("characters: ", ...characters)
+      } catch (e) {
+        // 에러는 getCharacterList에서 처리
+      }
+    };
+
+    fetchCharacters();
+  }, []);
+
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [messages, setMessages] = useState([]);
 
