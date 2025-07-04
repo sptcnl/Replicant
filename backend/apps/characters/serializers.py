@@ -1,10 +1,19 @@
 from rest_framework import serializers
 from .models import Character, Tag
 
-class CharacterSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=10, required=True)
-    scenario = serializers.CharField(required=True)
-    tag = serializers.CharField(required=True)
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['name']
+
+
+class CharacterSerializer(serializers.ModelSerializer):
+    tag = TagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Character
+        fields = ['name', 'scenario', 'tag']
 
     def create(self, validated_data):
         # ManyToMany 관계 데이터 분리
