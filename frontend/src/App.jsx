@@ -18,7 +18,7 @@ function App() {
         const characters = response.data.map((item, idx) => ({
         id: item.id,
         name: item.name,
-        avatar: defaultProfile || item.profileImage, // avatar가 없으면 기본값
+        avatar: item.profileImage || defaultProfile, // avatar가 없으면 기본값
         status: 'online',     // status도 기본값 지정
         }));
 
