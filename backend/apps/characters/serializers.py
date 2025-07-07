@@ -2,14 +2,12 @@ from rest_framework import serializers
 from .models import Character, Tag
 
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ['name']
-
-
 class CharacterSerializer(serializers.ModelSerializer):
-    tag = TagSerializer(many=True, read_only=True)
+    tag = serializers.SlugRelatedField(
+        many = True,
+        read_only = True,
+        slug_field = 'name'
+    )
 
     class Meta:
         model = Character
