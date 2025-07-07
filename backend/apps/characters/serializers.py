@@ -11,7 +11,7 @@ class CharacterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Character
-        fields = ['name', 'scenario', 'tag']
+        fields = ['id', 'profile_img', 'name', 'scenario', 'tag']
 
     def create(self, validated_data):
         # ManyToMany 관계 데이터 분리

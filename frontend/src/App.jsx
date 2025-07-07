@@ -2,18 +2,26 @@ import React, { useState, useEffect } from 'react';
 import ChatList from './ChatList';
 import Chat from './Chat';
 import {getCharacterList} from './api/character.js';
+import defaultProfile from './assets/default.jpg';
 
 function App() {
   const [friends, setFriends] = useState([
-    { id: 1, name: '김민수', avatar: 'avatar1.png', status: 'online' },
-    { id: 2, name: '이지은', avatar: 'avatar2.png', status: 'offline' },
-    { id: 3, name: '박준호', avatar: 'avatar3.png', status: 'online' },
+    { id: "1a", name: '김민수', avatar: defaultProfile, status: 'offline' },
+    { id: "2a", name: '이지은', avatar: defaultProfile, status: 'offline' },
+    { id: "3a", name: '박준호', avatar: defaultProfile, status: 'offline' },
   ]);
 
   useEffect(() => {
     const fetchCharacters = async () => {
       try {
-        const characters = await getCharacterList();
+        const response = await getCharacterList();
+        const characters = response.data.map((item, idx) => ({
+        id: item.id,
+        name: item.name,
+        avatar: defaultProfile || item.profileImage, // avatar가 없으면 기본값
+        status: 'online',     // status도 기본값 지정
+        }));
+
         setFriends(prevFriends => [...prevFriends, ...characters]);
         console.log("characters: ", ...characters)
       } catch (e) {
