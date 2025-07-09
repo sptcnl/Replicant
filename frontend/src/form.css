@@ -1,0 +1,56 @@
+.form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.form-row label {
+    min-width: 90px;
+    margin-right: 8px;
+}
+
+.form-row textarea {
+    flex: 1;
+    min-height: 60px;
+    resize: vertical;
+}
+
+.hashtag-selected {
+    display: inline-flex;
+    align-items: center;
+    background: #444444;
+    color: #fff;
+    border-radius: 16px;
+    padding: 4px 10px;
+    margin: 2px 4px;
+    font-size: 0.95em;
+    line-height: 1.2;
+}
+.hashtag-suggestion {
+    display: inline-flex;
+    align-items: center;
+    background: #444444;
+    color: #fff;
+    border-radius: 16px;
+    padding: 4px 10px;
+    margin: 2px 4px;
+    font-size: 0.95em;
+    line-height: 1.2;
+}
+
+.cancel-btn {
+    background: transparent;
+    color: #fff;
+    border: none;
+    font-size: 1.1em;
+    margin-left: 2px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    transition: background 0.2s;
+}
