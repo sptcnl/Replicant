@@ -31,3 +31,7 @@ class CharacterSerializer(serializers.ModelSerializer):
                 tags.append(tag)
             character.tag.set(tags)
         return character
+
+
+class TagNameListSerializer(serializers.ListSerializer):
+    child = serializers.CharField()
