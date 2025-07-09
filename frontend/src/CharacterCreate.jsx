@@ -58,7 +58,7 @@ const CharacterCreate = ({ onCreated }) => {
         });
 
         try {
-            const response = await createCharacter();
+            const response = await createCharacter(formData);
             console.log("getCharacterCreate response: ", response);
         } catch (error) {
             alert('캐릭터 생성 실패: ' + (error.response?.data?.message || error.message));
