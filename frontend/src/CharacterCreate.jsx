@@ -103,6 +103,7 @@ const CharacterCreate = ({ onCreated }) => {
                         style={{ width: '70%', marginBottom: 5 }}
                         onKeyDown={e => {
                             if (e.key === "Enter") {
+                            e.preventDefault();
                             // 입력값이 비어있지 않고, 이미 선택된 태그가 아니라면 추가
                             if (hashtagInput.trim() && !selectedTags.includes(hashtagInput.trim())) {
                                 addTag(hashtagInput.trim());
