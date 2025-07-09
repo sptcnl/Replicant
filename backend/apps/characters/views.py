@@ -11,8 +11,8 @@ class CharacterLCView(generics.ListCreateAPIView):
             # List(GET) 요청은 누구나 접근 가능
             return [permissions.AllowAny()]
         elif self.request.method == 'POST':
-            # Create(POST) 요청은 관리자만 접근 가능
-            return [permissions.IsAdminUser()]
+            # Create(POST) 요청은 로그인 한 회원만 접근 가능
+            return [permissions.IsAuthenticated()]
         return super().get_permissions()
 
     def perform_create(self, serializer):
