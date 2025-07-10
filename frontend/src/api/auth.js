@@ -1,0 +1,48 @@
+import { apiClient } from "./apiClient.js"
+import axios from 'axios';
+
+
+export const LoginAPI = async (data) => {
+    try {
+        const loginResponse = await apiClient.post(
+            `api/accounts/login/`,
+            JSON.stringify(data),
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+        console.log("loginResponse: ", loginResponse)
+        const accessToken = loginResponse.data.access;
+        const refreshToken = loginResponse.data.refresh;
+        sessionStorage.setItem('accessToken', accessToken);
+        sessionStorage.setItem('refreshToken', refreshToken);
+        alert("로그인 완료");
+    }  catch (e) {
+        if (axios.isAxiosError(e)) {
+            alert("데이터를 처리하는중 에러가 발생하였습니다.")
+            console.log(e)
+        } else {
+            // 기타 에러 처리
+            alert("예상치 못한 오류가 발생했습니다.")
+        }
+        throw e
+    }
+}
+
+export function getAccessToken() {
+    return sessionStorage.getItem('accessToken');
+}
+
+export function isAccessTokenValid() {
+    const token = getAccessToken();
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const now = Math.floor(Date.now() / 1000);
+        return payload.exp > now;
+    } catch {
+        return false;
+    }
+}
