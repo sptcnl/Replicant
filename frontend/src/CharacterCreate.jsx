@@ -3,7 +3,7 @@ import { createCharacter, getTagList } from './api/character.js'
 import './Modal.css';
 
 
-const CharacterCreate = ({ onCreated }) => {
+function CharacterCreate ({ onCreated }) {
     const [allHashtags, setAllHashtags] = useState([]);
     const [name, setName] = useState('');
     const [profileImage, setProfileImage] = useState(null);
@@ -59,7 +59,21 @@ const CharacterCreate = ({ onCreated }) => {
 
         try {
             const response = await createCharacter(formData);
-            console.log("getCharacterCreate response: ", response);
+            console.log("CharacterCreate response: ", response);
+
+            // 생성 성공 시 onCreated 콜백 호출!
+            if (onCreated) {
+                // response.data에 새 캐릭터 정보가 있다고 가정
+                onCreated(response.data);
+            }
+
+            // 폼 초기화 등 추가 처리
+            setName('');
+            setProfileImage(null);
+            setPreview(null);
+            setScenario('');
+            setSelectedTags([]);
+            setHashtagInput('');
         } catch (error) {
             alert('캐릭터 생성 실패: ' + (error.response?.data?.message || error.message));
         }

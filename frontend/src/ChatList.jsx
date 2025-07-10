@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CharacterCreate from './CharacterCreate.jsx';
+import { getCharacterList } from './api/character.js';
+import defaultProfile from './assets/default.jpg';
 import './form.css'
 import './App.css'
 
-function ChatList({ friends, selectedId, onSelectFriend, onCreated }) {
+function ChatList({ selectedId, onSelectFriend, onCreated }) {
+  const [friends, setFriends] = useState([
+    { id: "1a", name: '김민수', avatar: defaultProfile, status: 'offline' },
+    { id: "2a", name: '이지은', avatar: defaultProfile, status: 'offline' },
+    { id: "3a", name: '박준호', avatar: defaultProfile, status: 'offline' },
+  ]);
   const [showCreate, setShowCreate] = useState(false);
 
   const handleCreateClick = () => setShowCreate(true);
@@ -11,8 +18,40 @@ function ChatList({ friends, selectedId, onSelectFriend, onCreated }) {
 
   const handleCreated = (newCharacter) => {
     setShowCreate(false);
+    // 새 캐릭터를 friends 배열에 추가
+    setFriends(prevFriends => [
+      ...prevFriends,
+      {
+        id: newCharacter.id,
+        name: newCharacter.name,
+        avatar: newCharacter.profileImg || defaultProfile,
+        status: 'online',
+      }
+    ]);
     if (onCreated) onCreated(newCharacter);
   };
+
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      try {
+        const response = await getCharacterList();
+        console.log("getCharacterList response: ", response);
+        const characters = response.data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          avatar: item.profileImg || defaultProfile, // avatar가 없으면 기본값
+          status: 'online',     // status도 기본값 지정
+        }));
+        
+        setFriends(prevFriends => [...prevFriends, ...characters]);
+        console.log("characters: ", ...characters);
+      } catch (e) {
+        // 에러는 getCharacterList에서 처리
+      }
+    };
+    
+    fetchCharacters();
+  }, []);
 
   return (
     <div className="friend-list">

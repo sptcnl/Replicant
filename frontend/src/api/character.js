@@ -9,7 +9,7 @@ export const getCharacterList = async () => {
                 
             }
         )
-        console.log("characterResponse: ", characterResponse)
+        console.log("characterListResponse: ", characterResponse)
         return characterResponse
     } catch (e) {
         if (axios.isAxiosError(e)) {
@@ -36,8 +36,9 @@ export const createCharacter = async (formData) => {
                 }
             }
         );
-        console.log("characterResponse: ", characterResponse);
+        console.log("characterCreateResponse: ", characterResponse);
         alert("캐릭터 생성 완료");
+        return characterResponse
     }  catch (e) {
         if (axios.isAxiosError(e)) {
             alert("데이터를 처리하는중 에러가 발생하였습니다.")
