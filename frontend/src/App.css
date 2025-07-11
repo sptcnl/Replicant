@@ -46,6 +46,11 @@
   padding: 12px;
   align-items: center;
   cursor: pointer;
+  overflow-y: scroll;  /* 또는 auto */
+  scrollbar-width: none; /* Firefox */
+}
+.friend-items::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 .friend-item:hover {
   background: #2c2c2c;

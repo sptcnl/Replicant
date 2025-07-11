@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CharacterCreate from './CharacterCreate.jsx';
+import CharacterDetailPopup from './CharacterDetail.jsx';
 import { getCharacterList } from './api/character.js';
 import defaultProfile from './assets/default.jpg';
 import './form.css'
@@ -7,14 +8,17 @@ import './App.css'
 
 function ChatList({ selectedId, onSelectFriend, onCreated }) {
   const [friends, setFriends] = useState([
-    { id: "1a", name: '김민수', avatar: defaultProfile, status: 'offline' },
-    { id: "2a", name: '이지은', avatar: defaultProfile, status: 'offline' },
-    { id: "3a", name: '박준호', avatar: defaultProfile, status: 'offline' },
+    { id: "1a", name: '김민수', avatar: defaultProfile, status: 'offline', tags: ['바보', '멍청이'], scenario: '' },
+    { id: "2a", name: '이지은', avatar: defaultProfile, status: 'offline', tags: [], scenario: '' },
+    { id: "3a", name: '박준호', avatar: defaultProfile, status: 'offline', tags: [], scenario: '' },
   ]);
   const [showCreate, setShowCreate] = useState(false);
 
   const handleCreateClick = () => setShowCreate(true);
   const handleClose = () => setShowCreate(false);
+
+  const [hoveredId, setHoveredId] = useState(null);
+  const hoveredFriend = friends.find(friend => friend.id === hoveredId);
 
   const handleCreated = (newCharacter) => {
     setShowCreate(false);
@@ -41,6 +45,8 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
           name: item.name,
           avatar: item.profileImg || defaultProfile, // avatar가 없으면 기본값
           status: 'online',     // status도 기본값 지정
+          tags: item.readTag,
+          scenario: item.scenario
         }));
         
         setFriends(prevFriends => [...prevFriends, ...characters]);
@@ -76,8 +82,10 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
             key={friend.id}
             className={`friend-item ${selectedId === friend.id ? 'selected' : ''}`}
             onClick={() => onSelectFriend(friend)}
+            onMouseEnter={() => setHoveredId(friend.id)}
+            onMouseLeave={() => setHoveredId(null)}
           >
-            <img src={friend.avatar} alt={friend.name} />
+            <img src={friend.avatar || defaultProfile} alt={friend.name} />
             <div>
               <div className="friend-name">{friend.name}</div>
               <div className="friend-status">{friend.status}</div>
@@ -85,6 +93,7 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
           </div>
         ))}
       </div>
+      <CharacterDetailPopup friend={hoveredFriend} />
     </div>
   );
 }
