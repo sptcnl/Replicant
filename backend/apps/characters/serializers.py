@@ -6,7 +6,8 @@ class CharacterSerializer(serializers.ModelSerializer):
     read_tag = serializers.SlugRelatedField(
         many = True,
         read_only = True,
-        slug_field = 'name'
+        slug_field = 'name',
+        source='tag'
     )
     write_tag = serializers.ListField(
         child=serializers.CharField(), write_only=True
