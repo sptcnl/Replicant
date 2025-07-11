@@ -5,5 +5,7 @@ import './App.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <App />
+  <div className='container'>
+    <App />
+  </div>
 )
