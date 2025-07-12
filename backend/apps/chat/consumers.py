@@ -22,6 +22,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # 방 존재 및 권한 체크
         room = await self.get_room(self.room_id)
         if not room or room.user != self.user:
+            print('방 없음')
             await self.close()
             return
 
