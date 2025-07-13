@@ -220,7 +220,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             room, created = Room.objects.get_or_create(id=room_id, user_id=user_id, character_id=room_id)
             return room
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     @database_sync_to_async
