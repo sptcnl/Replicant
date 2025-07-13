@@ -20,9 +20,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.user = self.scope["user"]
 
         # 방 존재 및 권한 체크
-        room = await self.get_room(self.room_id)
-        if not room or room.user != self.user:
-            print('방 없음')
+        room = await self.get_or_create_room(self.room_id, self.user)
+        if not room or room.user_id != self.user:
+            print('방 없음 또는 방의 주인이 아님')
             await self.close()
             return
 
@@ -216,10 +216,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def get_room(self, room_id):
+    def get_or_create_room(self, room_id, user_id):
         try:
-            return Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
+            room, created = Room.objects.get_or_create(id=room_id, user_id=user_id, character_id=room_id)
+            return room
+        except:
             return None
 
     @database_sync_to_async
