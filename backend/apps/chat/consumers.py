@@ -1,4 +1,4 @@
-import json, os, environ, uuid
+import json, os, environ, uuid, logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Room, Chat
@@ -18,11 +18,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'chat_{self.room_id}'
         self.user = self.scope["user"]
+        logging.info(f"self.user: {self.user}")
+        logging.info(f"self.users type: {type(self.user)}")
 
         # 방 존재 및 권한 체크
         room = await self.get_or_create_room(self.room_id, self.user)
-        if not room or room.user_id != self.user:
-            print('방 없음 또는 방의 주인이 아님')
+        logging.info(f'room_dict: {room.__dict__}')
+        if not room or room.user_id != self.user.id:
+            logging.info('방 없음 또는 방의 주인이 아님')
             await self.close()
             return
 
@@ -216,12 +219,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def get_or_create_room(self, room_id, user_id):
+    def get_or_create_room(self, room_id, user):
         try:
-            room, created = Room.objects.get_or_create(id=room_id, user_id=user_id, character_id=room_id)
+            room, created = Room.objects.get_or_create(id=room_id, user=user, character_id=room_id)
             return room
         except Exception as e:
-            print(e)
+            logging.info(e)
             return None
 
     @database_sync_to_async
