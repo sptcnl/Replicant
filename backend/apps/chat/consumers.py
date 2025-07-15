@@ -52,6 +52,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+        logging.info(f"receive data: {data}")
         content = data.get('content')
         sender_type = data.get('sender_type')
         action = data.get('action')
@@ -63,6 +64,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         elif action == 'ai_only_response':
             await self.handle_ai_only_response(data)
             return
+
+        logging.info(f"sender_type: {sender_type}")
 
         # 유저 메시지 저장
         chat = await self.save_chat(
@@ -167,7 +170,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     @database_sync_to_async
-    def get_ai_response(self, user_id, user_message):
+    def get_ai_response(self, user_message):
         current_state = {
             "input_text": "", 
             "output_text": "", 
@@ -178,7 +181,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "configurable": {
                 "llm": {"type": "gemini", "api_key": gemini_api_key},
                 "thread_id": str(uuid.uuid4()),
-                "user_id": user_id  # 사용자 식별자 추가
+                "user_id": self.user.id  # 사용자 식별자 추가
             }
         }
 
