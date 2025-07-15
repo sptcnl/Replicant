@@ -111,13 +111,13 @@
   border-radius: 8px;
   word-break: break-word;
 }
-.message.me {
+.message.U {
   background: #2c2c2c;
   margin-left: auto;
   text-align: right;
   color: #e0e0e0;
 }
-.message.friend {
+.message.A {
   background: #424242;
   margin-right: auto;
   color: #e0e0e0;

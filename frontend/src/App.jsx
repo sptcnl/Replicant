@@ -27,13 +27,13 @@ function App() {
     setSelectedFriend(friend);
     // 실제로는 서버에서 해당 친구와의 메시지 가져오기
     setMessages([
-      { id: 1, text: '안녕하세요!', sender: friend.id },
-      { id: 2, text: '오늘 뭐 할까요?', sender: 'me' },
+      { id: 1, content: '안녕하세요!', sender_type: 'A' },
+      { id: 2, content: '오늘 뭐 할까요?', sender_type: 'U' },
     ]);
   };
   
-  const handleSendMessage = (text) => {
-    setMessages([...messages, { id: Date.now(), text, sender: 'me' }]);
+  const handleSendMessage = (content) => {
+    setMessages([...messages, { id: Date.now(), content, sender_type: 'U' }]);
   };
 
   return (

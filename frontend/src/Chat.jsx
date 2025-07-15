@@ -13,7 +13,8 @@ function Chat({ friend, messages, onSendMessage }) {
       ws.current.close();
     }
     // 새 연결 생성
-    const socket = new WebSocket(`ws://localhost:8000/ws/chat/${friend.id}/`);
+    const token = sessionStorage.getItem('accessToken');
+    const socket = new WebSocket(`ws://localhost:8000/ws/chat/${friend.id}/?token=${token}`);
     ws.current = socket;
 
     socket.onopen = () => {
@@ -21,39 +22,59 @@ function Chat({ friend, messages, onSendMessage }) {
     };
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('data: ', data);
-      // 메시지 수신 시 상태 갱신
-      const msg = data.message;
-      onSendMessage({
-        id: msg.id,
-        text: msg.content,
-        sender: msg.sender_type,
-      });
+      try {
+        const data = JSON.parse(event.data);
+        // data.chats가 배열이 아니라 객체라면 그대로 사용
+        const msg = data.chats;
+        if (msg && typeof msg === 'object' && msg.id && msg.content) {
+          console.log(`onmessage 시작`);
+          onSendMessage({
+            id: msg.id,
+            content: msg.content,
+            sender_type: msg.sender_type,
+          });
+          console.log(`onmessage 마무리`);
+        }
+      } catch (e) {
+        console.error('메시지 파싱 에러:', e);
+      }
     };
 
     socket.onclose = () => {
       console.log('WebSocket disconnected');
     };
 
+    socket.onerror = (e) => {
+      console.error('WebSocket error:', e);
+    };
+
     return () => {
-      socket.close();
+      if (ws.current) {
+        ws.current.close();
+        ws.current = null;
+      }
     };
   }, [friend, onSendMessage]);
 
   const handleSend = () => {
-    if (inputText.trim() === '' || !ws.current || ws.current.readyState !== 1) return;
-    // 메시지 전송
-    ws.current.send(JSON.stringify({
-      text: inputText,
-      sender: 'me',
-    }));
+    if (
+      inputText.trim() === '' ||
+      !ws.current ||
+      ws.current.readyState !== WebSocket.OPEN
+    )
+      return;
+    ws.current.send(
+      JSON.stringify({
+        content: inputText,
+        sender_type: 'U',
+      })
+    );
     setInputText('');
     // 로컬에서 바로 보이게
     onSendMessage({
       id: Date.now(),
-      text: inputText,
-      sender: 'me',
+      content: inputText,
+      sender_type: 'U',
     });
   };
 
@@ -69,14 +90,17 @@ function Chat({ friend, messages, onSendMessage }) {
             </div>
           </div>
           <div className="messages">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`message ${msg.sender === 'me' ? 'me' : 'friend'}`}
-              >
-                {msg.text}
-              </div>
-            ))}
+            {Array.isArray(messages) &&
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`message ${msg.sender_type === 'U' ? 'U' : 'A'}`}
+                >
+                  {typeof msg.content === 'string'
+                    ? msg.content
+                    : JSON.stringify(msg.content)}
+                </div>
+              ))}
           </div>
           <div className="message-input">
             <input
@@ -84,7 +108,7 @@ function Chat({ friend, messages, onSendMessage }) {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="메시지를 입력하세요"
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             />
             <button onClick={handleSend}>보내기</button>
           </div>
