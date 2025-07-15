@@ -13,6 +13,7 @@ class Room(models.Model):
     character = models.ForeignKey(
         Character, on_delete=models.PROTECT, related_name="character_room"
     )
+    session_id = models.CharField(max_length=225, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
