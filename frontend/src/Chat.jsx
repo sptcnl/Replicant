@@ -71,11 +71,9 @@ function Chat({ friend, messages, onSendMessage }) {
     );
     setInputText('');
     // 로컬에서 바로 보이게
-    onSendMessage({
-      id: Date.now(),
-      content: inputText,
-      sender_type: 'U',
-    });
+    onSendMessage(
+      inputText,
+    );
   };
 
   return (
@@ -91,16 +89,17 @@ function Chat({ friend, messages, onSendMessage }) {
           </div>
           <div className="messages">
             {Array.isArray(messages) &&
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`message ${msg.sender_type === 'U' ? 'U' : 'A'}`}
-                >
-                  {typeof msg.content === 'string'
-                    ? msg.content
-                    : JSON.stringify(msg.content)}
-                </div>
-              ))}
+              messages.map((msg) => {
+                console.log('msg:', msg);
+                return (
+                  <div
+                    key={msg.id}
+                    className={`message ${msg.sender_type === 'U' ? 'U' : 'A'}`}
+                  >
+                    {msg.content}
+                  </div>
+                );
+              })}
           </div>
           <div className="message-input">
             <input
