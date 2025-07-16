@@ -90,7 +90,6 @@ function Chat({ friend, messages, onSendMessage }) {
           <div className="messages">
             {Array.isArray(messages) &&
               messages.map((msg) => {
-                console.log('msg:', msg);
                 return (
                   <div
                     key={msg.id}
