@@ -2,7 +2,8 @@ import json, os, environ, uuid, logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Room, Chat
-from .llm import graph
+from apps.characters.models import Character, Tag, CharacterTag
+from .llm import graph, in_memory_store
 from config.settings import BASE_DIR
 
 env = environ.Env(DEBUG=(bool, True))
@@ -15,19 +16,27 @@ gemini_api_key = env("GEMINI_API_KEY")
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_id = self.scope['url_route']['kwargs']['room_id']
-        self.room_group_name = f'chat_{self.room_id}'
+        self.character_id = self.scope['url_route']['kwargs']['room_id']
         self.user = self.scope["user"]
         logging.info(f"self.user: {self.user}")
         logging.info(f"self.users type: {type(self.user)}")
 
         # 방 존재 및 권한 체크
-        room = await self.get_or_create_room(self.room_id, self.user)
-        logging.info(f'room_dict: {room.__dict__}')
+        room = await self.get_or_create_room(self.character_id, self.user)
+        logging.info({
+            "id": str(room.id),
+            "user_id": room.user_id,
+            "character_id": str(room.character_id),
+            "created_at": room.created_at.isoformat(),
+        })
+
         if not room or room.user_id != self.user.id:
             logging.info('방 없음 또는 방의 주인이 아님')
             await self.close()
             return
+
+        self.room_id = room.id
+        self.room_group_name = f'chat_{self.room_id}'
 
         # 그룹에 참여 (여러 클라이언트 동시 접속 가능)
         await self.channel_layer.group_add(
@@ -180,10 +189,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         config = {
             "configurable": {
                 "llm": {"type": "gemini", "api_key": gemini_api_key},
-                "thread_id": str(uuid.uuid4()),
-                "user_id": self.user.id  # 사용자 식별자 추가
+                "thread_id": self.room_id,
+                "session_id": self.room_id,
+                "user_id": self.user.id,  # 사용자 식별자 추가
             }
         }
+
+        logging.info(f"get_ai_response/config: {config}")
 
         current_state["input_text"] = user_message
         result = graph.invoke(current_state, config=config)
@@ -205,14 +217,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             sender_type='U'
         ).exists() else None
 
-    @database_sync_to_async
-    def delete_last_ai_response(self, room_id):
-        # 가장 최근 AI 답변 삭제
-        Chat.objects.filter(
-            room__id=room_id,
-            sender_type='A'
-        ).last().delete()
-
     async def chat_message(self, event):
         # 메시지 수신 처리
         message = event['message']
@@ -222,9 +226,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def get_or_create_room(self, room_id, user):
+    def get_or_create_room(self, character_id, user):
         try:
-            room, created = Room.objects.get_or_create(id=room_id, user=user, character_id=room_id)
+            room, created = Room.objects.get_or_create(id=character_id, user=user, character_id=character_id)
+            logging.info(f"room_obj: {room.__dict__}")
+            if created:
+                character_obj = Character.objects.get(id=character_id)
+                tag_names = list(
+                    character_obj.tag.values_list("name", flat=True)
+                )
+                logging.info(f"character_obj: {character_obj.__dict__}")
+                logging.info(f"tag_names: {tag_names}")
+                character_data = {
+                    "name": character_obj.name,
+                    "personality": tag_names,
+                    "scenario": character_obj.scenario
+                }
+                namespace_meta = (str(user.id), str(room.id), "metadata")
+                in_memory_store.put(namespace_meta, "character", character_data)
+                # namespace_meta = (str(user_id), str(session_id), "metadata")
+                metadata = in_memory_store.get(namespace_meta, "character")
+                logging.info(f"character_metadata: {metadata}")
+                metadata_val = metadata.value
+                logging.info(f"character_metadata_val: {metadata_val}")
             return room
         except Exception as e:
             logging.info(e)
