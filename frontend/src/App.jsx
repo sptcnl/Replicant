@@ -3,6 +3,7 @@ import ChatList from './ChatList';
 import Chat from './Chat';
 import Login from './Login';
 import { isAccessTokenValid, getAccessToken } from './api/auth.js';
+import { getChatList } from './api/chat.js';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isAccessTokenValid());
@@ -23,13 +24,28 @@ function App() {
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [messages, setMessages] = useState([]);
   
-  const handleSelectFriend = (friend) => {
+  const handleSelectFriend = async (friend) => {
     setSelectedFriend(friend);
-    // 실제로는 서버에서 해당 친구와의 메시지 가져오기
-    setMessages([
-      { id: 1, content: '안녕하세요!', sender_type: 'A' },
-      { id: 2, content: '오늘 뭐 할까요?', sender_type: 'U' },
-    ]);
+    console.log(`selected friend: ${friend.name}: ${friend.id}`)
+    
+    try {
+      // API 호출 - friend.id가 room_id라고 가정
+      const chatList = await getChatList(friend.id);
+      console.log(`chatList: ${typeof(chatList)}, ${chatList}`)
+      const chatData = Array.isArray(chatList) ? chatList : chatList.data || [];
+      const normalizedChatList = chatData.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender_type: msg.senderType,
+        created_at: msg.createdAt,
+        room: msg.room,
+    }));
+
+      setMessages(normalizedChatList);
+    } catch (e) {
+      console.error('메시지 불러오기 실패:', e);
+      setMessages([]); // 실패하면 메시지 초기화
+    }
   };
   
   const handleSendMessage = (content) => {

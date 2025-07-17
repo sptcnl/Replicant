@@ -45,13 +45,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
-        # 기존 채팅 내역 불러오기 (선택 사항)
-        chats = await self.get_chats(self.room_id)
-        await self.send(text_data=json.dumps({
-            'type': 'chat_history',
-            'chats': chats
-        }))
-
     async def disconnect(self, close_code):
         # 그룹에서 나가기
         await self.channel_layer.group_discard(
@@ -254,6 +247,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_chats(self, room_id):
         chats = Chat.objects.filter(room__id=room_id).order_by('created_at')
+        logging.info(f"get_chats: {chats}")
+        logging.info(f"get_chats_to_chat: {[
+            {
+                'id': str(chat.id),
+                'content': chat.content,
+                'sender_type': chat.sender_type,
+                'created_at': chat.created_at.isoformat(),
+            }
+            for chat in chats
+        ]}")
         return [
             {
                 'id': str(chat.id),
