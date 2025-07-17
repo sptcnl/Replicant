@@ -140,8 +140,10 @@ def call_model(state: State, config):
 
     # 최신 요약 불러오기
     summaries = load_summary(thread_id)
-    latest_summary = summaries.values if summaries else "요약 정보 없음"
+    latest_summary = summaries if summaries else "요약 정보 없음"
     logging.info(f"latest_summary: {latest_summary}")
+
+    chat = load_chat(thread_id)
 
     # 모델 초기화
     if llm_type == "gemini":
@@ -152,7 +154,7 @@ def call_model(state: State, config):
 
     # 대화 메시지 구성
     messages = []
-    for turn in state.get("history", []):
+    for turn in chat:
         messages.extend([
             HumanMessage(content=turn["user"]),
             AIMessage(content=turn["ai"])
@@ -180,7 +182,7 @@ def call_model(state: State, config):
     response = model.invoke(messages)
 
     # 새로운 history 저장
-    old_history = state.get("history", [])
+    old_history = load_chat(thread_id)
     new_turn = {"user": state["input_text"], "ai": response.content}
 
     # 기존 history에 새 대화 추가 후 최신 30턴 유지
