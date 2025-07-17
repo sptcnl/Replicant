@@ -3,7 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Room, Chat
 from apps.characters.models import Character, Tag, CharacterTag
-from .llm import graph, in_memory_store
+from .llm import graph, save_metadata, load_metadata, save_chat, load_chat
 from config.settings import BASE_DIR
 
 env = environ.Env(DEBUG=(bool, True))
@@ -191,7 +191,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "llm": {"type": "gemini", "api_key": gemini_api_key},
                 "thread_id": self.room_id,
                 "session_id": self.room_id,
-                "user_id": self.user.id,  # 사용자 식별자 추가
+                "user_id": self.user.id,
             }
         }
 
@@ -242,16 +242,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "personality": tag_names,
                     "scenario": character_obj.scenario
                 }
-                namespace_meta = (str(user.id), str(room.id), "metadata")
-                in_memory_store.put(namespace_meta, "character", character_data)
-                # namespace_meta = (str(user_id), str(session_id), "metadata")
-                metadata = in_memory_store.get(namespace_meta, "character")
-                logging.info(f"character_metadata: {metadata}")
-                metadata_val = metadata.value
-                logging.info(f"character_metadata_val: {metadata_val}")
+                is_saved = save_metadata(str(room.id), character_data)
+                if is_saved:
+                    metadata = load_metadata(str(room.id))
+                    logging.info(f"character_metadata_save_check: {metadata}")
             return room
         except Exception as e:
-            logging.info(e)
+            logging.error(e)
             return None
 
     @database_sync_to_async

@@ -1,14 +1,73 @@
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.store.memory import InMemoryStore
 from langgraph.checkpoint.redis import RedisSaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
-import os, logging
+import os, json, redis, logging
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-in_memory_store = InMemoryStore()  # 장기 메모리 저장소 초기화
+
+with RedisSaver.from_conn_string("redis://channels_redis:6379") as checkpointer:
+    checkpointer.setup()
+
+# Redis 클라이언트
+redis_client = redis.Redis.from_url("redis://channels_redis:6379")
+
+def save_chat(thread_id: str, chat_history: list):
+    """
+    thread_id별 대화기록 저장
+    30턴만 유지
+    chat_history: [ {"role": "user", "content": "안녕하세요"}, ... ]
+    """
+    key = f"chat:{thread_id}"
+    redis_client.set(key, json.dumps(chat_history))
+    return True
+
+def load_chat(thread_id: str):
+    """
+    저장된 대화기록 불러오기
+    """
+    key = f"chat:{thread_id}"
+    data = redis_client.get(key)
+    if data is None:
+        return []
+    return json.loads(data)
+
+def save_summary(thread_id: str, summary: str):
+    """
+    thread_id별 요약 텍스트 저장
+    """
+    key = f"summary:{thread_id}"
+    redis_client.set(key, summary)
+    return True
+
+def load_summary(thread_id: str):
+    """
+    요약 텍스트 불러오기
+    """
+    key = f"summary:{thread_id}"
+    data = redis_client.get(key)
+    if data is None:
+        return None
+    return data.decode()
+
+def save_metadata(thread_id: str, metadata: dict):
+    """
+    thread_id별 메타데이터 저장
+    """
+    key = f"meta:{thread_id}"
+    redis_client.set(key, json.dumps(metadata))
+    return True
+
+def load_metadata(thread_id: str):
+    """
+    메타데이터 불러오기
+    """
+    key = f"meta:{thread_id}"
+    data = redis_client.get(key)
+    if data is None:
+        return {}
+    return json.loads(data)
 
 
 # 상태 정의
@@ -27,13 +86,13 @@ def summarize_history(state: State, config):
     """요약 생성 노드"""
     llm_type = config["configurable"]["llm"]["type"]
     user_id = config["configurable"]["user_id"]
-    session_id = config["configurable"]["session_id"]
+    thread_id = config["configurable"]["thread_id"]
 
     # 메타데이터 조회
-    namespace_meta = (user_id, session_id, "metadata")
-    metadata = in_memory_store.get(namespace_meta, "character")
+    metadata = load_metadata(thread_id)
     logging.info(f"character_metadata: {metadata}")
-    metadata_val = metadata.value
+    # metadata_val = metadata.values
+    # logging.info(f"character_metadata_val: {metadata_val}")
 
 
     # 모델 초기화
@@ -59,12 +118,10 @@ def summarize_history(state: State, config):
     summary = response.content
 
     # 요약 저장
-    namespace_sum = (user_id, session_id, "summaries")
-    old = in_memory_store.get(namespace_sum, "all_summaries")
-    summaries = old.value + [summary] if old else [summary]
-    in_memory_store.put(namespace_sum, "all_summaries", summaries)
+    is_saved = save_summary(thread_id, summary)
 
-    logging.info(f"[디버그: summaries 저장 완료] {in_memory_store.search(namespace_sum)}")
+    if is_saved:
+        logging.info(f"[디버그: summaries 저장 완료] {thread_id}: {summary}")
 
     return {"summary": summary}
 
@@ -73,18 +130,18 @@ def call_model(state: State, config):
     logging.info(f"config: {config}")
     llm_type = config["configurable"]["llm"]["type"]
     user_id = config["configurable"]["user_id"]
-    session_id = config["configurable"]["session_id"]
+    thread_id = config["configurable"]["thread_id"]
 
     # 메타데이터 조회
-    namespace_meta = (str(user_id), str(session_id), "metadata")
-    metadata = in_memory_store.get(namespace_meta, "character")
+    metadata = load_metadata(thread_id)
     logging.info(f"character_metadata: {metadata}")
-    metadata_val = metadata.value
+    # metadata_val = metadata.values
+    # logging.info(f"character_metadata_val: {metadata_val}")
 
     # 최신 요약 불러오기
-    namespace_sum = (user_id, session_id, "summaries")
-    summaries = in_memory_store.get(namespace_sum, "all_summaries")
-    latest_summary = summaries.value[-1] if summaries else "요약 정보 없음"
+    summaries = load_summary(thread_id)
+    latest_summary = summaries.values if summaries else "요약 정보 없음"
+    logging.info(f"latest_summary: {latest_summary}")
 
     # 모델 초기화
     if llm_type == "gemini":
@@ -123,14 +180,23 @@ def call_model(state: State, config):
     response = model.invoke(messages)
 
     # 새로운 history 저장
-    new_history = state.get("history", []) + [
-        {"user": state["input_text"], "ai": response.content}
-    ][-30:]  # 최대 30턴만 유지
+    old_history = state.get("history", [])
+    new_turn = {"user": state["input_text"], "ai": response.content}
 
-    return {
+    # 기존 history에 새 대화 추가 후 최신 30턴 유지
+    new_history = (old_history + [new_turn])[-30:]
+
+    # 이후에 저장
+    save_chat(thread_id, new_history)
+
+    output = {
         "output_text": response.content,
         "history": new_history
     }
+
+    logging.info(f"output: {output}")
+
+    return output
 
 
 # 그래프 정의
@@ -147,5 +213,4 @@ builder.add_conditional_edges(
 )
 builder.add_edge("summarize", END)
 
-checkpointer = MemorySaver()
 graph = builder.compile(checkpointer=checkpointer)
