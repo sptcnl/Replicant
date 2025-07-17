@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { CheckUsername, CheckEmail } from "./api/auth.js";
 
 function SignUp({ onClose, onSignUpSuccess }) {
     const [form, setForm] = useState({
@@ -85,28 +86,50 @@ function SignUp({ onClose, onSignUpSuccess }) {
         return isValid;
     };
 
-    // 중복확인 API 호출 (더미 구현: 실제 API 연동 필요)
     const checkUsernameDuplication = async () => {
         if (!form.username.trim()) {
-        setErrors((e) => ({ ...e, username: "먼저 사용자 이름을 입력하세요." }));
-        return;
+            setErrors((e) => ({ ...e, username: "먼저 사용자 이름을 입력하세요." }));
+            return;
         }
-        // 예: fetch(`/api/check-username?username=${form.username}`)
-        // 임시 랜덤 체크 (실제로는 서버 결과로 설정)
-        const available = form.username.length % 2 === 0; // 임의 로직 예시
-        setChecks((c) => ({ ...c, usernameAvailable: available }));
-        if (!available) setErrors((e) => ({ ...e, username: "이미 사용 중인 사용자 이름입니다." }));
+
+        try {
+            const response = await CheckUsername(form.username);
+            // response 예: { available: true }
+            const available = response.data.available;
+            console.log('중복확인 응답:', available);
+
+            setChecks((c) => ({ ...c, usernameAvailable: available }));
+            if (!available) {
+            setErrors((e) => ({ ...e, username: "" }));
+            } else {
+            setErrors((e) => ({ ...e, username: undefined }));
+            }
+        } catch (error) {
+            setErrors((e) => ({ ...e, username: "중복확인 도중 오류가 발생했습니다." }));
+        }
     };
 
     const checkEmailDuplication = async () => {
         if (!form.email.trim()) {
-        setErrors((e) => ({ ...e, email: "먼저 이메일을 입력하세요." }));
-        return;
+            setErrors((e) => ({ ...e, email: "먼저 이메일을 입력하세요." }));
+            return;
         }
-        // 예: fetch(`/api/check-email?email=${form.email}`)
-        const available = form.email.length % 2 === 1; // 임의 로직 예시
-        setChecks((c) => ({ ...c, emailAvailable: available }));
-        if (!available) setErrors((e) => ({ ...e, email: "이미 가입된 이메일입니다." }));
+
+        try {
+            const response = await CheckEmail(form.email);
+            // response 예: { available: true }
+            const available = response.data.available;
+            console.log('중복확인 응답:', available);
+
+            setChecks((c) => ({ ...c, emailAvailable: available }));
+            if (!available) {
+            setErrors((e) => ({ ...e, email: "" }));
+            } else {
+            setErrors((e) => ({ ...e, email: undefined }));
+            }
+        } catch (error) {
+            setErrors((e) => ({ ...e, email: "중복확인 도중 오류가 발생했습니다." }));
+        }
     };
 
     // 회원가입 제출
@@ -115,8 +138,8 @@ function SignUp({ onClose, onSignUpSuccess }) {
         if (!validateRequired()) return;
 
         if (checks.usernameAvailable === false || checks.emailAvailable === false) {
-        alert("중복확인을 통과한 사용자 이름과 이메일을 사용해주세요.");
-        return;
+            alert("중복확인을 통과한 사용자 이름과 이메일을 사용해주세요.");
+            return;
         }
 
         // 실제 회원가입 API 호출 예:
