@@ -220,8 +220,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_or_create_room(self, character_id, user):
+        combined_str = character_id + str(user.id)
+        room_id = uuid.uuid5(uuid.NAMESPACE_DNS, combined_str)
         try:
-            room, created = Room.objects.get_or_create(id=character_id, user=user, character_id=character_id)
+            room, created = Room.objects.get_or_create(id=room_id, user=user, character_id=character_id)
             logging.info(f"room_obj: {room.__dict__}")
             if created:
                 character_obj = Character.objects.get(id=character_id)

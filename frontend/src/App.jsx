@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { v5 as uuidv5 } from 'uuid';
+import { jwtDecode } from "jwt-decode";
 import ChatList from './ChatList';
 import Chat from './Chat';
 import Login from './Login';
@@ -7,8 +9,12 @@ import { isAccessTokenValid, getAccessToken } from './api/auth.js';
 import { getChatList } from './api/chat.js';
 import './Modal.css'
 
+
 function App() {
+  const MY_NAMESPACE = uuidv5.DNS;
   const [showSignUp, setShowSignUp] = useState(false);
+  const token = sessionStorage.getItem('accessToken');
+  let userId;
 
   const openSignUp = () => setShowSignUp(true);
   const closeSignUp = () => setShowSignUp(false);
@@ -40,10 +46,20 @@ function App() {
   const handleSelectFriend = async (friend) => {
     setSelectedFriend(friend);
     console.log(`selected friend: ${friend.name}: ${friend.id}`)
+
+    console.log(token);
+    if (token) {
+      const decoded = jwtDecode(token);
+      console.log(decoded);
+      // decoded.user_id, decoded.id, decoded.username 등 실제 백엔드 JWT에 들어있는 값 key명에 맞게
+      userId = decoded.user_id || decoded.id;
+    }
+
     
     try {
       // API 호출 - friend.id가 room_id라고 가정
-      const chatList = await getChatList(friend.id);
+      const roomId = uuidv5(friend.id + userId, MY_NAMESPACE);
+      const chatList = await getChatList(roomId);
       console.log(`chatList: ${typeof(chatList)}, ${chatList}`)
       const chatData = Array.isArray(chatList) ? chatList : chatList.data || [];
       const normalizedChatList = chatData.map(msg => ({
