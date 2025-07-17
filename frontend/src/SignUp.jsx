@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CheckUsername, CheckEmail } from "./api/auth.js";
+import { CheckUsername, CheckEmail, SignUpAPI } from "./api/auth.js";
 
 function SignUp({ onClose, onSignUpSuccess }) {
     const [form, setForm] = useState({
@@ -133,7 +133,7 @@ function SignUp({ onClose, onSignUpSuccess }) {
     };
 
     // 회원가입 제출
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateRequired()) return;
 
@@ -142,12 +142,44 @@ function SignUp({ onClose, onSignUpSuccess }) {
             return;
         }
 
-        // 실제 회원가입 API 호출 예:
-        // fetch('/api/signup', { method: 'POST', body: JSON.stringify(form), ... })
+        try {
+            // 파일 포함 여부에 따라 FormData 생성
+            const formData = new FormData();
+                formData.append("username", form.username);
+                formData.append("email", form.email);
+                formData.append("password", form.password);
+            if (form.gender) {
+                formData.append("gender", form.gender);
+            }
+            if (form.profile_img) {
+                formData.append("profile_img", form.profile_img);
+            }
 
-        // 임의 성공 콜백 호출
-        onSignUpSuccess && onSignUpSuccess(form);
+            const obj = {};
+            for (const [key, value] of formData.entries()) {
+            obj[key] = value;
+            }
+            console.log(obj);
+
+            // 회원가입 API 호출 (프로필이미지 업로드 지원)
+            const response = await SignUpAPI(formData);
+
+            // 성공 시 콜백
+            if (onSignUpSuccess) {
+                console.log(`onSignUpSuccess: ${onSignUpSuccess}`)
+                console.log(`response.data: ${response.data}`)
+                onSignUpSuccess(response.data); // 서버의 응답 데이터를 넘겨줌
+            }
+        } catch (error) {
+            // 에러 처리: 서버 오류, 유효성 오류 등
+            console.log(`error: ${error}`)
+            alert(
+                error?.response?.data?.detail ||
+                "회원가입 이후 문제가 발생했습니다."
+            );
+        }
     };
+
 
     return (
         <div className="modal-content" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>

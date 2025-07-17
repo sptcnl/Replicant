@@ -44,6 +44,32 @@ export const CheckEmail = async (email) => {
     }
 }
 
+export const SignUpAPI = async (formData) => {
+    try {
+        const signupResponse = await apiClient.post(
+            `api/accounts/signup/`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            }
+        );
+        console.log("signupResponse: ", signupResponse)
+        alert("회원가입 완료");
+        return signupResponse
+    }  catch (e) {
+        if (axios.isAxiosError(e)) {
+            alert("회원가입 데이터를 처리하는중 에러가 발생하였습니다.")
+            console.log(e)
+        } else {
+            // 기타 에러 처리
+            alert("예상치 못한 오류가 발생했습니다.")
+        }
+        throw e
+    }
+}
+
 export const LoginAPI = async (data) => {
     try {
         const loginResponse = await apiClient.post(
