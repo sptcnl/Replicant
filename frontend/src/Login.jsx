@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LoginAPI } from './api/auth.js';
+import './Modal.css'
 
 function Login({ onLogin }) {
     const [username, setUsername] = useState('');

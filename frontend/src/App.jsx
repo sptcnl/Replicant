@@ -2,10 +2,23 @@ import React, { useState } from 'react';
 import ChatList from './ChatList';
 import Chat from './Chat';
 import Login from './Login';
+import SignUp from './SignUp';
 import { isAccessTokenValid, getAccessToken } from './api/auth.js';
 import { getChatList } from './api/chat.js';
+import './Modal.css'
 
 function App() {
+  const [showSignUp, setShowSignUp] = useState(false);
+
+  const openSignUp = () => setShowSignUp(true);
+  const closeSignUp = () => setShowSignUp(false);
+
+  const handleSignUpSuccess = (userData) => {
+    console.log('회원가입 성공:', userData);
+    setShowSignUp(false);
+    // 추가 처리 (로그인, 환영 메시지 등)
+  };
+
   const [isLoggedIn, setIsLoggedIn] = useState(isAccessTokenValid());
 
   // 로그인 성공 시 콜백
@@ -67,11 +80,30 @@ function App() {
         />
       </div>
     ) : (
-      <div className="modal-overlay">
-        <div className="modal-content">
-          <Login onLogin={handleLogin} />
+      <>
+        <div>
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="modal-content" style={{ zIndex: 1001 }}>
+              <Login onLogin={handleLogin} />
+              <a className='signup-button' onClick={(e) => { e.preventDefault(); openSignUp(); }} href="#">회원가입</a>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* SignUp 모달은 로그인 모달과 별개로 최상위에 렌더 */}
+        {showSignUp && (
+          <div className="modal-overlay" onClick={closeSignUp}>
+            <div
+              className="modal-content"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()} // 모달내부 클릭은 바깥 클릭 차단
+            >
+              <SignUp onClose={closeSignUp} onSignUpSuccess={handleSignUpSuccess} />
+            </div>
+          </div>
+        )}
+      </>
     )
   );
 }
