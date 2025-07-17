@@ -1,7 +1,22 @@
-from django.shortcuts import render
+from rest_framework import generics
+from apps.characters.views import IsOwner
+from .models import Chat, Room
+from .serializers import RoomSerializer, ChatSerializer
 
-def index(request):
-    return render(request, "chat/index.html")
 
-def room(request, room_name):
-    return render(request, "chat/room.html", {"room_name": room_name})
+class RoomLView(generics.ListAPIView):
+    permission_classes = [IsOwner]
+    serializer_class = RoomSerializer
+
+    def get_queryset(self):
+        return Room.objects.filter(user=self.request.user)
+
+
+class ChatLView(generics.ListAPIView):
+    permission_classes = [IsOwner]
+    serializer_class = ChatSerializer
+
+    def get_queryset(self):
+        rooms = Room.objects.filter(user=self.request.user)
+        chats = Chat.objects.filter(room__in=rooms)
+        return chats
