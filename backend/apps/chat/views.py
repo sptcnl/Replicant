@@ -17,6 +17,6 @@ class ChatLView(generics.ListAPIView):
     serializer_class = ChatSerializer
 
     def get_queryset(self):
-        rooms = Room.objects.filter(user=self.request.user)
-        chats = Chat.objects.filter(room__in=rooms)
+        room_id = self.kwargs.get('room_id')
+        chats = Chat.objects.filter(room_id=room_id)
         return chats
