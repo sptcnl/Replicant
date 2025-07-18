@@ -54,7 +54,7 @@ export const createCharacter = async (formData) => {
 export const getTagList = async () => {
     try {
         const characterTagResponse = await apiClient.get(
-            `api/characters/tag/`, {
+            `api/characters/tag/list/`, {
                 
             }
         )
