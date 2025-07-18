@@ -301,9 +301,9 @@ function SignUp({ onClose, onSignUpSuccess }) {
                     <label htmlFor="gender">성별 (선택)</label>
                     <select id="gender" name="gender" value={form.gender} onChange={handleChange}>
                     <option value="">선택하세요</option>
-                    <option value="male">남성</option>
-                    <option value="female">여성</option>
-                    <option value="other">기타</option>
+                    <option value="M">남성</option>
+                    <option value="W">여성</option>
+                    <option value="O">기타</option>
                     </select>
                 </div>
 
