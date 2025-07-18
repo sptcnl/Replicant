@@ -17,13 +17,22 @@ function Chat({ friend, messages, onSendMessage }) {
     const socket = new WebSocket(`ws://localhost:8000/ws/chat/${friend.id}/?token=${token}`);
     ws.current = socket;
 
+    let pingInterval = null;
+
     socket.onopen = () => {
       console.log('WebSocket connected');
+
+      pingInterval = setInterval(() => {
+        if (ws.current && ws.current.readyState === 1) {
+          ws.current.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 20000);
     };
 
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === "pong") return;
         // data.chats가 배열이 아니라 객체라면 그대로 사용
         const msg = data.chats;
         if (msg && typeof msg === 'object' && msg.id && msg.content) {
@@ -52,6 +61,10 @@ function Chat({ friend, messages, onSendMessage }) {
       if (ws.current) {
         ws.current.close();
         ws.current = null;
+        // 타이머 정리
+      if (pingInterval) {
+        clearInterval(pingInterval);
+      }
       }
     };
   }, [friend, onSendMessage]);

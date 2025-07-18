@@ -59,6 +59,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         sender_type = data.get('sender_type')
         action = data.get('action')
 
+        if data.get("type") == "ping":
+            await self.send(text_data=json.dumps({ "type": "pong" }))
+            logging.info(f"\n\npong\n\n")
+            return
+
         # action(재생성, 유저 답변 건너뛰기)에 따라 변경
         if action == 'regenerate_response':
             await self.handle_regenerate_response(data)
