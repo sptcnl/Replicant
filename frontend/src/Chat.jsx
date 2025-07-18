@@ -4,67 +4,95 @@ function Chat({ friend, messages, onSendMessage }) {
   const [inputText, setInputText] = useState('');
 
   const ws = useRef(null);
+  const reconnectTimer = useRef(null);
 
   // 친구(채팅방) 변경 시 웹소켓 연결/해제
   useEffect(() => {
     if (!friend) return;
+    let pingInterval = null;
+    let shouldReconnect = true;
     // 기존 연결 종료
     if (ws.current) {
       ws.current.close();
     }
     // 새 연결 생성
-    const token = sessionStorage.getItem('accessToken');
-    const socket = new WebSocket(`ws://localhost:8000/ws/chat/${friend.id}/?token=${token}`);
-    ws.current = socket;
+    const connectWebSocket = () => {
+      const token = sessionStorage.getItem("accessToken");
+      const socket = new WebSocket(
+        `ws://localhost:8000/ws/chat/${friend.id}/?token=${token}`
+      );
+    
+      ws.current = socket;
 
-    let pingInterval = null;
 
-    socket.onopen = () => {
-      console.log('WebSocket connected');
+      socket.onopen = () => {
+        console.log('WebSocket connected');
 
-      pingInterval = setInterval(() => {
-        if (ws.current && ws.current.readyState === 1) {
-          ws.current.send(JSON.stringify({ type: "ping" }));
+        pingInterval = setInterval(() => {
+          if (ws.current && ws.current.readyState === 1) {
+            ws.current.send(JSON.stringify({ type: "ping" }));
+          }
+        }, 20000);
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "pong") return;
+          // data.chats가 배열이 아니라 객체라면 그대로 사용
+          const msg = data.chats;
+          if (msg && typeof msg === 'object' && msg.id && msg.content) {
+            console.log(`onmessage 시작`);
+            onSendMessage({
+              id: msg.id,
+              content: msg.content,
+              sender_type: msg.sender_type,
+            });
+            console.log(`onmessage 마무리`);
+          }
+        } catch (e) {
+          console.error('메시지 파싱 에러:', e);
         }
-      }, 20000);
-    };
+      };
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "pong") return;
-        // data.chats가 배열이 아니라 객체라면 그대로 사용
-        const msg = data.chats;
-        if (msg && typeof msg === 'object' && msg.id && msg.content) {
-          console.log(`onmessage 시작`);
-          onSendMessage({
-            id: msg.id,
-            content: msg.content,
-            sender_type: msg.sender_type,
-          });
-          console.log(`onmessage 마무리`);
+      socket.onclose = () => {
+        console.log('WebSocket disconnected');
+
+        // 핑 타이머 클리어
+        if (pingInterval) clearInterval(pingInterval);
+
+        // 재연결 처리
+        if (shouldReconnect) {
+          console.log("🔁 재연결 시도 중...");
+          reconnectTimer.current = setTimeout(() => {
+            connectWebSocket();
+          }, 3000); // 3초 후 재연결
         }
-      } catch (e) {
-        console.error('메시지 파싱 에러:', e);
-      }
+      };
+
+      socket.onerror = (e) => {
+        console.error('WebSocket error:', e);
+      };
     };
 
-    socket.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-
-    socket.onerror = (e) => {
-      console.error('WebSocket error:', e);
-    };
+    // 최초 연결 시도
+    connectWebSocket();
 
     return () => {
-      if (ws.current) {
-        ws.current.close();
-        ws.current = null;
-        // 타이머 정리
+      console.log("🧹 cleanup 시작");
+      shouldReconnect = false;
+
       if (pingInterval) {
         clearInterval(pingInterval);
       }
+
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+      }
+
+      if (ws.current) {
+        ws.current.close();
+        ws.current = null;
       }
     };
   }, [friend, onSendMessage]);
