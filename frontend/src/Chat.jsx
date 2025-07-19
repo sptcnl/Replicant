@@ -37,19 +37,26 @@ function Chat({ friend, messages, onSendMessage }) {
 
       socket.onmessage = (event) => {
         try {
+          console.log(`onmessage 들어옴`);
           const data = JSON.parse(event.data);
           if (data.type === "pong") return;
           // data.chats가 배열이 아니라 객체라면 그대로 사용
-          const msg = data.chats;
-          if (msg && typeof msg === 'object' && msg.id && msg.content) {
-            console.log(`onmessage 시작`);
-            onSendMessage({
-              id: msg.id,
-              content: msg.content,
-              sender_type: msg.sender_type,
-            });
-            console.log(`onmessage 마무리`);
+          if (data.type === "chat_message") {
+            console.log(`onmessage res_data: ${data}`)
+            const msg = data.message;
+            console.log(`onmessage msg: ${msg}`);
+            console.log(`onmessage msg type: ${typeof msg}`);
+            if (msg && msg.id && msg.content) {
+              console.log(`onmessage 시작`);
+              onSendMessage({
+                id: msg.id,
+                content: msg.content,
+                sender_type: msg.sender_type,
+              });
+              console.log(`onmessage 마무리`);
+            }
           }
+          console.log(`알수없는 메세지`);
         } catch (e) {
           console.error('메시지 파싱 에러:', e);
         }
