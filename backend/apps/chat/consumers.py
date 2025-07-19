@@ -84,11 +84,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # AI 답변 생성
         if sender_type == 'U':  # 유저가 보낸 경우에만 AI 답변
             ai_response = await self.get_ai_response(content)
+            logging.info(f"[타이밍 체크용] 웹소켓 ai_response 나옴")
             ai_chat = await self.save_chat(
                 room_id=self.room_id,
                 content=ai_response,
                 sender_type='A'  # AI
             )
+            logging.info(f"[타이밍 체크용] 웹소켓 ai_chat DB 저장 완료")
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -101,6 +103,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 }
             )
+            logging.info(f"[타이밍 체크용] 웹소켓 group_send 완료")
+            await self.send(text_data=json.dumps({ 
+                'type': 'chat_message',
+                "message": {
+                    'id': str(ai_chat.id),
+                    'content': ai_response,
+                    'sender_type': 'A',
+                    'created_at': ai_chat.created_at.isoformat(),
+                }
+            }))
+            logging.info(f"\n\nai 답변 보냄\n\n")
+            return
 
     async def handle_ai_only_response(self, data):
         """유저 답변 건너뛰고 AI 응답만 생성"""
@@ -197,11 +211,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         current_state["input_text"] = user_message
         result = graph.invoke(current_state, config=config)
+        logging.info(f"[타이밍 체크용] 웹소켓 get_ai_response graph.invoke 직후")
         current_state = {
             "input_text": "",
             "output_text": "",
             "history": result["history"]
         }
+        logging.info(f"[타이밍 체크용] 웹소켓 get_ai_response 끝나기 직전")
         return result["output_text"]
 
     @database_sync_to_async
