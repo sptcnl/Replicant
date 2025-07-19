@@ -4,6 +4,7 @@ from langgraph.checkpoint.redis import RedisSaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
 import os, json, redis, logging
+from .models import Chat
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 
@@ -22,6 +23,13 @@ def save_chat(thread_id: str, chat_history: list):
     key = f"chat:{thread_id}"
     redis_client.set(key, json.dumps(chat_history))
     return True
+
+def save_chat_to_rdb(room_id: str, chat: dict):
+    user_chat = chat["U"]
+    ai_chat = chat["A"]
+
+    Chat.objects.create(room_id=room_id, content=user_chat, sender_type="U")
+    Chat.objects.create(room_id=room_id, content=ai_chat, sender_type="A")
 
 def load_chat(thread_id: str):
     """
@@ -156,8 +164,8 @@ def call_model(state: State, config):
     messages = []
     for turn in chat:
         messages.extend([
-            HumanMessage(content=turn["user"]),
-            AIMessage(content=turn["ai"])
+            HumanMessage(content=turn["U"]),
+            AIMessage(content=turn["A"])
         ])
 
     system_msg = f"""
@@ -183,7 +191,7 @@ def call_model(state: State, config):
 
     # 새로운 history 저장
     old_history = load_chat(thread_id)
-    new_turn = {"user": state["input_text"], "ai": response.content}
+    new_turn = {"U": state["input_text"], "A": response.content}
 
     # 기존 history에 새 대화 추가 후 최신 30턴 유지
     new_history = (old_history + [new_turn])[-30:]
