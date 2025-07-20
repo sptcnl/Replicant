@@ -39,7 +39,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        logging.info('\n\n[타이밍 체크용] 웹소켓 연결 끊어짐\n\n')
+        logging.info(f'\n\n[타이밍 체크용] 웹소켓 연결 끊어짐\nclose_code: {close_code}\n\n')
 
     async def receive(self, text_data):
         data = json.loads(text_data)
