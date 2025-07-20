@@ -23,8 +23,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # 방 존재 및 권한 체크
         room = await self.get_or_create_room(self.character_id, self.user)
+        self.room_id = room.id
         logging.info({
-            "id": str(room.id),
+            "id": str(self.room_id),
             "user_id": room.user_id,
             "character_id": str(room.character_id),
             "created_at": room.created_at.isoformat(),
@@ -35,22 +36,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        self.room_id = room.id
-        self.room_group_name = f'chat_{self.room_id}'
-
-        # 그룹에 참여 (여러 클라이언트 동시 접속 가능)
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
         await self.accept()
 
     async def disconnect(self, close_code):
-        # 그룹에서 나가기
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        logging.info('\n\n[타이밍 체크용] 웹소켓 연결 끊어짐\n\n')
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -72,8 +61,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.handle_ai_only_response(data)
             return
 
-        logging.info(f"sender_type: {sender_type}")
-
         # 유저 메시지 저장
         chat = await self.save_chat(
             room_id=self.room_id,
@@ -91,19 +78,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender_type='A'  # AI
             )
             logging.info(f"[타이밍 체크용] 웹소켓 ai_chat DB 저장 완료")
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    'message': {
-                        'id': str(ai_chat.id),
-                        'content': ai_response,
-                        'sender_type': 'A',
-                        'created_at': ai_chat.created_at.isoformat(),
-                    }
-                }
-            )
-            logging.info(f"[타이밍 체크용] 웹소켓 group_send 완료")
             await self.send(text_data=json.dumps({ 
                 'type': 'chat_message',
                 "message": {
@@ -117,7 +91,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
     async def handle_ai_only_response(self, data):
-        """유저 답변 건너뛰고 AI 응답만 생성"""
+        """
+        유저 답변 건너뛰고 AI 응답만 생성(미완)
+        아직 어떻게 구현할지 고민중
+        """
         room_id = data['room_id']
 
         # 가장 최근 유저 메시지 가져오기
@@ -129,7 +106,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.delete_last_ai_response(room_id)
         
         # AI 답변 생성 (유저 메시지는 저장하지 않음)
-        ai_response = await self.generate_ai_response(user_message)
+        ai_response = await self.get_ai_response(user_message)
         
         # AI 답변 저장 및 전송
         ai_chat = await self.save_chat(
@@ -138,22 +115,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             sender_type='A'  # AI
         )
         
-        # 그룹에 AI 메시지 전송
-        await self.channel_layer.group_send(
-            f"chat_{room_id}",
-            {
-                'type': 'chat_message',
-                'message': {
-                    'id': str(ai_chat.id),
-                    'content': ai_response,
-                    'sender_type': 'A',
-                    'created_at': ai_chat.created_at.isoformat()
-                }
+        # 프론트에 AI 메시지 전송
+        await self.send(text_data=json.dumps({ 
+            'type': 'chat_message',
+            "message": {
+                'id': str(ai_chat.id),
+                'content': ai_response,
+                'sender_type': 'A',
+                'created_at': ai_chat.created_at.isoformat(),
             }
-        )
+        }))
+        logging.info(f"\n\nai 답변 보냄\n\n")
+        return
 
     async def handle_regenerate_response(self, data):
-        """AI 답변 재생성"""
+        """
+        AI 답변 재생성 (미완)
+        llm history(redis)에서 최신 1턴 지우는거 추가해야함
+        """
         room_id = data['room_id']
         user_message = data['last_user_message']
         
@@ -161,7 +140,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.delete_last_ai_response(room_id)
         
         # 새 답변 생성
-        new_response = await self.generate_ai_response(user_message)
+        new_response = await self.get_ai_response(user_message)
         
         # 새 답변 저장 및 전송
         new_chat = await self.save_chat(
@@ -169,17 +148,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
             content=new_response,
             sender_type='A'
         )
-        await self.channel_layer.group_send(
-            f"chat_{room_id}",
-            {
-                'type': 'chat_message',
-                'message': {
-                    'id': str(new_chat.id),
-                    'content': new_response,
-                    'sender_type': 'A'
-                }
+
+        await self.send(text_data=json.dumps({ 
+            'type': 'chat_message',
+            "message": {
+                'id': str(new_chat.id),
+                'content': new_response,
+                'sender_type': 'A',
+                'created_at': new_chat.created_at.isoformat(),
             }
-        )
+        }))
+        logging.info(f"\n\nai 답변 보냄\n\n")
+        return
 
     @database_sync_to_async
     def delete_last_ai_response(self, room_id):
