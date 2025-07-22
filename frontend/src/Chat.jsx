@@ -99,11 +99,14 @@ function Chat({ friend }) {
             if (msg && msg.id && msg.content) {
               console.log(`onmessage 시작`);
               console.log(`ai message setMessages하기 이전: ${messages}`)
-              setMessages([...messages, {
-                id: msg.id,
-                content: msg.content,
-                sender_type: msg.sender_type,
-              }]);
+              setMessages((prevMessages) => [
+                ...prevMessages,
+                {
+                  id: msg.id,
+                  content: msg.content,
+                  sender_type: msg.sender_type,
+                },
+              ]);
               console.log(`onmessage 마무리`);
             }
           } else {
