@@ -105,7 +105,6 @@
 .message {
   display: inline-block;       /* 내용에 맞게 박스 크기 조절 */
   max-width: 70%;              /* 너무 길어지지 않도록 최대폭 제한 */
-  min-width: 50px;             /* 너무 작아지지 않도록 최소폭 설정 (선택) */
   padding: 8px 12px;
   margin-bottom: 12px;
   border-radius: 8px;

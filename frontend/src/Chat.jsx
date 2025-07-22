@@ -19,7 +19,9 @@ function Chat({ friend }) {
 
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [dotCount, setDotCount] = useState(1);
-  
+
+  const bottomRef = useRef(null);
+
   const handleFriendMessages = async (friend) => {
     if (token) {
           const decoded = jwtDecode(token);
@@ -49,6 +51,14 @@ function Chat({ friend }) {
           setMessages([]); // 실패하면 메시지 초기화
         }
   }
+
+  // 최신 메세지 자동 스크롤용
+  useEffect(() => {
+    // messages가 바뀔 때마다 스크롤 아래로
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // DOT 애니메이션용
   useEffect(() => {
@@ -225,6 +235,7 @@ function Chat({ friend }) {
                 <em>입력 중{".".repeat(dotCount)}</em>
               </div>
             )}
+            <div ref={bottomRef} />
           </div>
           <div className="message-input">
             <input

@@ -58,7 +58,7 @@ function App() {
           <div className="modal-overlay" style={{ zIndex: 1000 }}>
             <div className="modal-content" style={{ zIndex: 1001 }}>
               <Login onLogin={handleLogin} />
-              <a className='signup-button' onClick={(e) => { e.preventDefault(); openSignUp(); }} href="#">회원가입</a>
+              <a className='signup-button' style={{ margin: '0 auto 0 32px' }} onClick={(e) => { e.preventDefault(); openSignUp(); }} href="#">회원가입</a>
             </div>
           </div>
         </div>

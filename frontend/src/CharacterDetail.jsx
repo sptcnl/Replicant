@@ -4,7 +4,7 @@ function CharacterDetailPopup({ friend }) {
     if (!friend) return null;
     const tags = friend.tags || []
     return (
-        <div>
+        <div style={{padding: 10}}>
             <div style={{height: 150}}>
                 <img src={friend.avatar} alt={friend.name} style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover' }} />
                 <h4 style={{ margin: '8px 0 4px 0' }}>{friend.name}</h4>

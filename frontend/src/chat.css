@@ -3,3 +3,6 @@
     color: #aaa;
     transition: all 0.3s ease;
 }
+.messages::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
