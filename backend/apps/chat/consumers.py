@@ -78,15 +78,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender_type='A'  # AI
             )
             logging.info(f"[타이밍 체크용] 웹소켓 ai_chat DB 저장 완료")
-            await self.send(text_data=json.dumps({ 
-                'type': 'chat_message',
-                "message": {
+            await self.chat_message({
                     'id': str(ai_chat.id),
                     'content': ai_response,
                     'sender_type': 'A',
                     'created_at': ai_chat.created_at.isoformat(),
-                }
-            }))
+            })
             logging.info(f"\n\nai 답변 보냄\n\n")
             return
 
@@ -116,15 +113,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         
         # 프론트에 AI 메시지 전송
-        await self.send(text_data=json.dumps({ 
-            'type': 'chat_message',
-            "message": {
+        await self.chat_message({
                 'id': str(ai_chat.id),
                 'content': ai_response,
                 'sender_type': 'A',
                 'created_at': ai_chat.created_at.isoformat(),
-            }
-        }))
+        })
         logging.info(f"\n\nai 답변 보냄\n\n")
         return
 
@@ -149,15 +143,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             sender_type='A'
         )
 
-        await self.send(text_data=json.dumps({ 
-            'type': 'chat_message',
-            "message": {
+        await self.chat_message({
                 'id': str(new_chat.id),
                 'content': new_response,
                 'sender_type': 'A',
                 'created_at': new_chat.created_at.isoformat(),
-            }
-        }))
+        })
         logging.info(f"\n\nai 답변 보냄\n\n")
         return
 
@@ -211,9 +202,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             sender_type='U'
         ).exists() else None
 
-    async def chat_message(self, event):
+    async def chat_message(self, message):
         # 메시지 수신 처리
-        message = event['message']
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'message': message
