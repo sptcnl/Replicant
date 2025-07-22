@@ -5,16 +5,23 @@ function Chat({ friend, messages, onSendMessage }) {
 
   const ws = useRef(null);
   const reconnectTimer = useRef(null);
+  const pingInterval = useRef(null);
+  const shouldReconnect = useRef(true);
 
   // 친구(채팅방) 변경 시 웹소켓 연결/해제
   useEffect(() => {
     if (!friend) return;
-    let pingInterval = null;
-    let shouldReconnect = true;
     // 기존 연결 종료
     if (ws.current) {
       ws.current.close();
     }
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+    }
+    if (pingInterval.current) {
+      clearInterval(pingInterval.current);
+    }
+
     // 새 연결 생성
     const connectWebSocket = () => {
       const token = sessionStorage.getItem("accessToken");
@@ -28,7 +35,7 @@ function Chat({ friend, messages, onSendMessage }) {
       socket.onopen = () => {
         console.log('WebSocket connected');
 
-        pingInterval = setInterval(() => {
+        pingInterval.current = setInterval(() => {
           if (ws.current && ws.current.readyState === 1) {
             ws.current.send(JSON.stringify({ type: "ping" }));
           }
@@ -40,6 +47,7 @@ function Chat({ friend, messages, onSendMessage }) {
           console.log(`onmessage 들어옴`);
           const data = JSON.parse(event.data);
           if (data.type === "pong") return;
+
           // data.chats가 배열이 아니라 객체라면 그대로 사용
           if (data.type === "chat_message") {
             console.log(`onmessage res_data: ${data}`)
@@ -55,10 +63,11 @@ function Chat({ friend, messages, onSendMessage }) {
               });
               console.log(`onmessage 마무리`);
             }
+          } else {
+            console.log(`알수없는 메세지: ${data}`);
           }
-          console.log(`알수없는 메세지`);
         } catch (e) {
-          console.error('메시지 파싱 에러:', e);
+          console.error(`메시지 파싱 에러: ${e}`);
         }
       };
 
@@ -66,10 +75,10 @@ function Chat({ friend, messages, onSendMessage }) {
         console.log('WebSocket disconnected');
 
         // 핑 타이머 클리어
-        if (pingInterval) clearInterval(pingInterval);
+        if (pingInterval.current) clearInterval(pingInterval);
 
         // 재연결 처리
-        if (shouldReconnect) {
+        if (shouldReconnect.current) {
           console.log("🔁 재연결 시도 중...");
           reconnectTimer.current = setTimeout(() => {
             connectWebSocket();
@@ -87,19 +96,19 @@ function Chat({ friend, messages, onSendMessage }) {
 
     return () => {
       console.log("🧹 cleanup 시작");
-      shouldReconnect = false;
+      shouldReconnect.current = false;
 
-      if (pingInterval) {
-        clearInterval(pingInterval);
+      if (ws.current) {
+        ws.current.close();
+        // ws.current = null;
+      }
+
+      if (pingInterval.current) {
+        clearInterval(pingInterval.current);
       }
 
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
-      }
-
-      if (ws.current) {
-        ws.current.close();
-        ws.current = null;
       }
     };
   }, [friend, onSendMessage]);
