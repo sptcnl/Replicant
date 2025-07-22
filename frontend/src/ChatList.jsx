@@ -3,7 +3,6 @@ import CharacterCreate from './CharacterCreate.jsx';
 import CharacterDetailPopup from './CharacterDetail.jsx';
 import { getCharacterList } from './api/character.js';
 import defaultProfile from './assets/default.jpg';
-import './form.css'
 import './App.css'
 
 function ChatList({ selectedId, onSelectFriend, onCreated }) {
@@ -71,7 +70,7 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
         <div className="modal-overlay">
           <div className="modal-content">
             <CharacterCreate onCreated={handleCreated} />
-            <button className="modal-close" style={{color: "#e0e0e0"}} onClick={handleClose}>X</button>
+            <button className="modal-close" style={{color: "#e0e0e0"}} onClick={handleClose}>&times;</button>
           </div>
         </div>
       )}

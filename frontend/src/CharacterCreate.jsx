@@ -80,7 +80,7 @@ function CharacterCreate ({ onCreated }) {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form className="form-wrap" onSubmit={handleSubmit}>
             <div className="preview">
                 {preview && <img src={preview} alt="미리보기" width={300} height={300} style={{ objectFit: 'cover', borderRadius: '50%', marginBottom: 15 }} />}
             </div>
@@ -136,7 +136,14 @@ function CharacterCreate ({ onCreated }) {
                         {selectedTags.map(tag => (
                             <span key={tag} className="hashtag-selected">
                             {tag}
-                            <button className="cancel-btn" type="button" onClick={() => removeTag(tag)} style={{ marginLeft: 4, background: 'none' }}>×</button>
+                            {/* <button className="cancel-btn" type="button" onClick={() => removeTag(tag)} style={{ marginLeft: 4, background: 'none' }}>×</button> */}
+                            <button
+                                className='cancel-btn'
+                                onClick={() => removeTag(tag)}
+                                aria-label="태그 삭제"
+                            >
+                                &times;
+                            </button>
                             </span>
                         ))}
                         </div>

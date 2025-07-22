@@ -1,3 +1,7 @@
+.form-wrap {
+    padding: 20px;
+}
+
 .form-row {
     display: flex;
     align-items: center;
@@ -26,6 +30,7 @@
     font-size: 0.95em;
     line-height: 1.2;
 }
+
 .hashtag-suggestion {
     display: inline-flex;
     align-items: center;
@@ -45,12 +50,9 @@
     font-size: 1.1em;
     margin-left: 2px;
     cursor: pointer;
-    padding: 0 4px;
     line-height: 1;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 22px;
-    transition: background 0.2s;
 }
