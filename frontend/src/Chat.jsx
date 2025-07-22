@@ -2,20 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getChatList } from './api/chat.js';
 import { jwtDecode } from "jwt-decode";
 import { v5 as uuidv5 } from 'uuid';
+import './chat.css';
 
 function Chat({ friend }) {
   const MY_NAMESPACE = uuidv5.DNS;
   const token = sessionStorage.getItem('accessToken');
   let userId;
-
+  
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState([]);
-
+  
   const ws = useRef(null);
   const reconnectTimer = useRef(null);
   const pingInterval = useRef(null);
   const shouldReconnect = useRef(true);
 
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const [dotCount, setDotCount] = useState(1);
+  
   const handleFriendMessages = async (friend) => {
     if (token) {
           const decoded = jwtDecode(token);
@@ -45,6 +49,17 @@ function Chat({ friend }) {
           setMessages([]); // 실패하면 메시지 초기화
         }
   }
+
+  // DOT 애니메이션용
+  useEffect(() => {
+    if (!isAiTyping) return;
+
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev % 3) + 1); // 1 → 2 → 3 → 1 ...
+    }, 500); // 0.5초마다 점 갱신
+
+    return () => clearInterval(interval); // 종료 시 정리
+  }, [isAiTyping]);
 
   // 친구(채팅방) 변경 시 웹소켓 연결/해제
   useEffect(() => {
@@ -107,6 +122,9 @@ function Chat({ friend }) {
                   sender_type: msg.sender_type,
                 },
               ]);
+              if (msg.sender_type === 'A') {
+                setIsAiTyping(false);
+              }
               console.log(`onmessage 마무리`);
             }
           } else {
@@ -176,6 +194,7 @@ function Chat({ friend }) {
     );
     setInputText('');
     setMessages([...messages, { id: Date.now(), content: inputText, sender_type: 'U' }]);
+    setIsAiTyping(true);
   };
 
   return (
@@ -201,6 +220,11 @@ function Chat({ friend }) {
                   </div>
                 );
               })}
+            {isAiTyping && (
+              <div className="message A typing">
+                <em>입력 중{".".repeat(dotCount)}</em>
+              </div>
+            )}
           </div>
           <div className="message-input">
             <input

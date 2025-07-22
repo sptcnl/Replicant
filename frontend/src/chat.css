@@ -1,0 +1,5 @@
+.message.A.typing {
+    font-style: italic;
+    color: #aaa;
+    transition: all 0.3s ease;
+}
