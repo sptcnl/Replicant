@@ -6,11 +6,7 @@ import defaultProfile from './assets/default.jpg';
 import './App.css'
 
 function ChatList({ selectedId, onSelectFriend, onCreated }) {
-  const [friends, setFriends] = useState([
-    { id: "1a", name: '김민수', avatar: defaultProfile, status: 'offline', tags: ['바보', '멍청이'], scenario: '' },
-    { id: "2a", name: '이지은', avatar: defaultProfile, status: 'offline', tags: [], scenario: '' },
-    { id: "3a", name: '박준호', avatar: defaultProfile, status: 'offline', tags: [], scenario: '' },
-  ]);
+  const [friends, setFriends] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
 
   const handleCreateClick = () => setShowCreate(true);
@@ -48,7 +44,7 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
           scenario: item.scenario
         }));
         
-        setFriends(prevFriends => [...prevFriends, ...characters]);
+        setFriends([...characters]);
         console.log("characters: ", ...characters);
       } catch (e) {
         // 에러는 getCharacterList에서 처리
