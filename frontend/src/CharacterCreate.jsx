@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createCharacter, getTagList } from './api/character.js'
 import './Modal.css';
+import './form.css'
 
 
 function CharacterCreate ({ onCreated }) {
