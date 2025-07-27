@@ -8,6 +8,7 @@ import './App.css'
 function ChatList({ selectedId, onSelectFriend, onCreated }) {
   const [friends, setFriends] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleCreateClick = () => setShowCreate(true);
   const handleClose = () => setShowCreate(false);
@@ -54,10 +55,20 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
     fetchCharacters();
   }, []);
 
+  // 검색어에 맞는 친구 필터링 (이름 기준, 대소문자 구분 없이)
+  const filteredFriends = friends.filter(friend =>
+    friend.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="friend-list">
       <div className="search-bar">
-        <input type="text" placeholder="친구 검색" />
+        <input 
+          type="text" 
+          placeholder="친구 검색" 
+          value={searchTerm}  // 입력값 바인딩
+          onChange={e => setSearchTerm(e.target.value)} // 입력시 업데이트
+        />
         <button onClick={handleCreateClick}>+</button>
       </div>
 
@@ -72,7 +83,7 @@ function ChatList({ selectedId, onSelectFriend, onCreated }) {
       )}
 
       <div className="friend-items">
-        {friends.map((friend) => (
+        {filteredFriends.map(friend => (
           <div
             key={friend.id}
             className={`friend-item ${selectedId === friend.id ? 'selected' : ''}`}
