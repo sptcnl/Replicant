@@ -115,12 +115,15 @@ function Chat({ friend }) {
           // data.chats가 배열이 아니라 객체라면 그대로 사용
           if (data.type === "chat_message") {
             console.log(`onmessage res_data: ${data}`)
+            for (const [key, value] of Object.entries(data)) {
+              console.log(`[onmessage data dict] ${key}: ${value}`);
+            }
             const msg = data.message;
             console.log(`onmessage msg: ${msg}`);
             console.log(`onmessage msg type: ${typeof msg}`);
-            console.log(`onmessage msg id: ${msg.id}`);
-            console.log(`onmessage msg content: ${msg.content}`);
-            console.log(`onmessage msg sender_type: ${msg.sender_type}`);
+            for (const [key, value] of Object.entries(msg)) {
+              console.log(`[onmessage msg dict] ${key}: ${value}`);
+            }
             if (msg && msg.id && msg.content) {
               console.log(`onmessage 시작`);
               console.log(`ai message setMessages하기 이전: ${messages}`)

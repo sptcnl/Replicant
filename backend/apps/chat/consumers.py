@@ -72,6 +72,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if sender_type == 'U':  # 유저가 보낸 경우에만 AI 답변
             ai_response = await self.get_ai_response(content)
             logging.info(f"[타이밍 체크용] 웹소켓 ai_response 나옴")
+            logging.info(f"[response 체크용] {ai_response}")
             ai_chat = await self.save_chat(
                 room_id=self.room_id,
                 content=ai_response,
@@ -166,7 +167,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         current_state = {
             "input_text": "", 
             "output_text": "", 
-            "history": []
+            "history": [],
         }
 
         config = {
@@ -182,14 +183,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         current_state["input_text"] = user_message
         result = graph.invoke(current_state, config=config)
-        logging.info(f"[타이밍 체크용] 웹소켓 get_ai_response graph.invoke 직후")
-        current_state = {
-            "input_text": "",
-            "output_text": "",
-            "history": result["history"]
-        }
+        logging.info(f"graph invoke result: {result}")
         logging.info(f"[타이밍 체크용] 웹소켓 get_ai_response 끝나기 직전")
-        return result["output_text"]
+        return result["output_text"] if result["output_text"] else "(읽씹)"
 
     @database_sync_to_async
     def get_last_user_message(self, room_id):
