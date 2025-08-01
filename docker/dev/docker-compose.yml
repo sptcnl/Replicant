@@ -81,6 +81,8 @@ services:
 volumes:
     redisdata: {}
     pgdata: {}
+    certbot_conf: {}
+    certbot_www: {}
 
 networks:
     app-network:
