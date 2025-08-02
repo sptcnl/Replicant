@@ -1,6 +1,6 @@
 FROM nginx
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
-ENTRYPOINT ["/bin/bash", "-c", "envsubst 'sptcnl.duckdns.org' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+ENTRYPOINT ["/bin/bash", "-c", "envsubst '${SERVER_NAME}' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
 
 FROM python:3.12.9
 
