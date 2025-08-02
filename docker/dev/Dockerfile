@@ -1,5 +1,5 @@
 FROM nginx
-COPY default.conf.template /etc/nginx/conf.d/default.conf
+COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 ENTRYPOINT ["/bin/bash", "-c", "envsubst 'sptcnl.duckdns.org' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
 
 FROM python:3.12.9
