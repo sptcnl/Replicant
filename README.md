@@ -13,11 +13,11 @@
 ## 📑 Index
 
 ### 🚀 [Main Features](#-main-features-1)
-- [AI와의 실시간 채팅](#-가족-등록-및-관리-기능)
+- [AI와의 실시간 채팅](#-ai와의-실시간-채팅)
 
 ### 📖 [How to Use](#-how-to-use-1)
 - [.env 파일 구성](#what-should-go-into-a-env-file)
-- [Docker 및 로컬 개발 환경 실행 방법]()
+- [Docker 및 로컬 개발 환경 실행 방법](#how-to-run-with-docker--local-development)
 
 <br><br>
 
