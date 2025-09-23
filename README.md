@@ -24,11 +24,14 @@
 [-> 프로젝트 실행 영상(업로드 예정)]()
 
 ### 💬 AI와의 실시간 채팅
-**Family Registration & Management**
+**Real-time chat with AI**
 
 - 실시간 채팅 기능은 Django Channels를 활용해 구현했으며, Redis를 사용하여 최근 30턴의 채팅 기록과 그 요약을 별도로 저장하고 불러옵니다. 대화의 자연스러운 흐름과 효율적인 관리가 가능하도록 LangGraph라는 LLM(대형 언어 모델) 프레임워크도 함께 사용하고 있습니다.
+- 추후 업데이트에서는 현재 사용 중인 Gemini API 대신 HuggingFace의 무료 AI 모델로 대체할 예정이며, 이 모델은 제한 없이 누구나 무료로 사용할 수 있도록 할 계획입니다. 이를 통해 사용자는 비용 부담 없이 AI 기능을 자유롭게 사용할 수 있게 될 것입니다.
   <br> <br>
   _The real-time chat functionality is implemented using Django Channels, and Redis is used to separately store and retrieve the latest 30 turns of chat history along with their summaries. To ensure natural conversation flow and efficient management, the system also uses LangGraph, a large language model (LLM) framework._
+
+  _In a future update, the currently used Gemini API will be replaced with a free AI model from HuggingFace that can be used without any restrictions. This change will allow users to freely use AI features without incurring any costs._
 
 <br><br>
 
